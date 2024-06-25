@@ -1,0 +1,25 @@
+<div *ngIf="lastRegister">
+    <div mat-dialog-content>
+        <p>Deseja atualizar o hora final do ultimo registro para {{newHourFinal}} ?</p>
+        <p>Ultima registro: {{lastRegister.description}}</p>
+    </div>
+    <div>
+        <div class="mat-dialog-actions">
+            <button class="mat-button button-no" (click)="criarNovoRegistro()">Não, Criar um novo registro</button>
+            <button class="mat-button button-yes" (click)="atualizarUltimoRegistro()">Sim, atualizar final para
+                {{newHourFinal}}</button>
+        </div>
+    </div>
+</div>
+<div *ngIf="!lastRegister">
+    <div mat-dialog-content>
+        <p>Não há nenhum registro cadastrado hoje.</p>
+        <p>Deseja criar um novo registro agora ?</p>
+    </div>
+    <div>
+        <div class="mat-dialog-actions">
+            <button class="mat-button button-no" (click)="fecharLembrete()">Não, fechar lembrete</button>
+            <button class="mat-button button-yes" (click)="criarNovoRegistro()">Sim, criar novo registro</button>
+        </div>
+    </div>
+</div>

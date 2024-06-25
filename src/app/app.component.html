@@ -1,0 +1,7 @@
+<div class="container">
+  <router-outlet></router-outlet>
+  <app-notification></app-notification>
+  <div class="loader-container" *ngIf="loadingService.loading$ | async">
+    <div class="loader"></div>
+  </div>
+</div>

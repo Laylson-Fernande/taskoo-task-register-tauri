@@ -1,0 +1,100 @@
+{
+  "build": {
+    "beforeDevCommand": "npm run start --port 1420",
+    "beforeBuildCommand": "npm run build",
+    "devPath": "http://localhost:1420",
+    "distDir": "../dist/task-register-tauri",
+    "withGlobalTauri": false
+  },
+  "package": {
+    "productName": "task-register-tauri",
+    "version": "0.0.0"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": false,
+      "shell": {
+        "all": false,
+        "open": true
+      },
+      "window": {
+        "close": true,
+        "show": true,
+        "hide":true
+      }
+    },
+    "bundle": {
+      "active": true,
+      "icon": [
+        "icons/cuckoo/32x32.ico",
+        "icons/cuckoo/128x128.ico",
+        "icons/cuckoo/128x128@2x.ico",
+        "icons/cuckoo/icon.png"
+      ],
+      "identifier": "com.task.register",
+      "targets": "all"
+    },
+    "security": {
+      "csp": null
+    },
+    "updater": {
+      "active": false
+    },
+    "windows": [
+      {
+        "label": "main",
+        "url":"/dashboard",
+        "fullscreen": false,
+        "maximized": true,
+        "title": "Taskoo - Lembretes de tarefas",
+        "width": 800,
+        "height": 600,
+        "visible": false
+      },
+      {
+        "label": "dialog",
+        "title": "Dialog",
+        "url":"/dialog",
+        "maximizable": false,
+        "resizable": false,
+        "closable": false,
+        "width": 400,
+        "height": 300,
+        "visible": false,
+        "center": true
+      },
+      {
+        "label": "start-reminders",
+        "url":"/dialog/start-reminders",
+        "title": "Taskoo - Lembretes de tarefas",
+        "maximizable": false,
+        "resizable": false,
+        "closable": false,
+        "minimizable": false,
+        "alwaysOnTop": true,
+        "width": 575,
+        "height": 151,
+        "visible": true,
+        "center": true
+      },
+      {
+        "label": "note-reminder",
+        "url":"/dialog/note-reminder",
+        "title": "Taskoo - Lembretes de tarefas",
+        "maximizable": false,
+        "resizable": false,
+        "closable": false,
+        "minimizable": false,
+        "alwaysOnTop": true,
+        "width": 700,
+        "height": 200,
+        "visible": false,
+        "center": true
+      }
+    ],
+    "systemTray": {
+      "iconPath": "icons/cuckoo/icon.png",
+      "iconAsTemplate": true
+    }
+  }
+}

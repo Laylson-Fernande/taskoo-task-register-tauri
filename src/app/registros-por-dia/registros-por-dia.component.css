@@ -1,0 +1,29 @@
+.day-navegation{
+    padding-bottom: 10px;
+    text-align: left;
+}
+
+.day-navegation-container {
+    width: fit-content;
+    display: grid;
+    grid-template-columns: .2fr 1fr .2fr;
+    background-color: #6b6b6b;
+    border-radius: 10px;
+}
+
+.day-navegation-arrow {
+    text-align: center;
+    margin-top: auto;
+    margin-bottom: auto;
+    padding-top: 7px;
+}
+
+.day-navegation-date{
+    background-color: transparent;
+    box-shadow: none;
+}
+
+.registros-lista {
+    max-height: 50vh; /* Defina a altura máxima desejada */
+    overflow-y: auto; 
+}

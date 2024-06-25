@@ -1,0 +1,22 @@
+
+  
+  .mat-dialog-actions {
+    display: flex;
+    justify-content: center; /* Centraliza horizontalmente */
+  }
+
+  .mat-dialog-actions .mat-button-base {
+    margin: 0 8px; 
+  }
+
+  .mat-button {
+    margin-inline: 10px;
+  }
+
+  .button-no {
+    background-color: #af554c !important; 
+  }
+
+  .button-yes {
+    background-color: #4CAF50 !important;
+  }

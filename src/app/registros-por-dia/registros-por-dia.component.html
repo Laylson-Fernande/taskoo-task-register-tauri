@@ -1,0 +1,44 @@
+<script>
+    const dateInput = document.querySelector('input[type="date"]');
+
+    dateInput.addEventListener('click', function () {
+        this.showPicker();
+    });
+</script>
+
+<div>
+    <app-month-summary [currentDate]="currentDate" ></app-month-summary>
+</div>
+<div>
+    <div class="day-navegation">
+        <div class="day-navegation-container">
+            <div (click)="voltarDiaAnterior()" class="day-navegation-arrow">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                    viewBox="0 0 256 256">
+                    <path
+                        d="M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z">
+                    </path>
+                </svg>
+            </div>
+            <input type="date" class="day-navegation-date" [(ngModel)]="formattedDate" (change)="selecionarDia()">
+            <div (click)="avancarProximoDia()" class="day-navegation-arrow">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                    viewBox="0 0 256 256">
+                    <path
+                        d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z">
+                    </path>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <app-registro-hora-editar [dateRelease]="formattedDate"
+        (registroAlterado)="atualizarListaRegistros()"></app-registro-hora-editar>
+    <div class="registros-lista">
+        <app-registro-hora-item *ngFor="let registro of registrosDia" [RegistroHora]="registro"
+        (registroAlterado)="atualizarListaRegistros()"></app-registro-hora-item>
+    </div>
+<div>
+    <app-day-summary></app-day-summary>
+</div>    
+</div>

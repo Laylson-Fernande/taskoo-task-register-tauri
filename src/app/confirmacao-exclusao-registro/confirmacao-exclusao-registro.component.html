@@ -1,0 +1,18 @@
+<div class="mat-dialog-background">
+
+
+    <div class="mat-dialog-container">
+        <h1 mat-dialog-title>Confirmar Exclusão</h1>
+        <div mat-dialog-content>
+            <p>Deseja realmente remover o lançamento de horas do dia {{data.registro.release_date}} de {{data.registro.start_at}} as {{data.registro.end_at}}, referente ao contrato "{{ data.registro.contract_description }}"</p>
+            <p>Descrição: {{data.registro.description}}</p>
+        </div>
+        <div>
+            <div class="mat-dialog-actions">
+                <button class="mat-button" (click)="onNoClick()">Não, cancelar</button>
+                <button class ="mat-button, button-excluir" [mat-dialog-close]="true">Sim, Excluir</button>
+            </div>
+        </div>
+
+    </div>
+</div>

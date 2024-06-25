@@ -1,0 +1,78 @@
+<div class="month-summary">
+    <div class="summary-item">
+        <div class="summary-icon">
+            <div class="icon-bg-blue">
+                <svg xmlns="http://www.w3.org/2000/svg" width="35" height="35" fill="currentColor"
+                    viewBox="0 0 256 256">
+                    <path
+                        d="M136,80v43.47l36.12,21.67a8,8,0,0,1-8.24,13.72l-40-24A8,8,0,0,1,120,128V80a8,8,0,0,1,16,0Zm88-24a8,8,0,0,0-8,8V82c-6.35-7.36-12.83-14.45-20.12-21.83a96,96,0,1,0-2,137.7,8,8,0,0,0-11-11.64A80,80,0,1,1,184.54,71.4C192.68,79.64,199.81,87.58,207,96H184a8,8,0,0,0,0,16h40a8,8,0,0,0,8-8V64A8,8,0,0,0,224,56Z">
+                    </path>
+                </svg>
+            </div>
+        </div>
+        <div>
+            <div class="summary-name">Total de Horas Lançadas</div>
+            <div class="summary-value">{{resumoTotalMes.total_sum_hours_recorded}}</div>
+        </div>
+    </div>
+    <div class="summary-item">
+        <div class="summary-icon">
+            <div class="icon-bg-blue">
+                <svg xmlns="http://www.w3.org/2000/svg" width="35" height="35" fill="currentColor"
+                    viewBox="0 0 256 256">
+                    <path
+                        d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm64-88a8,8,0,0,1-8,8H128a8,8,0,0,1-8-8V72a8,8,0,0,1,16,0v48h48A8,8,0,0,1,192,128Z">
+                    </path>
+                </svg></div>
+        </div>
+        <div>
+            <div class="summary-name">Total de Horas Úteis</div>
+            <div class="summary-value">{{resumoTotalMes.working_hours}}</div>
+        </div>
+    </div>
+    <div class="summary-item">
+        <div class="summary-icon">
+            <div class="icon-bg-green">
+                <svg xmlns="http://www.w3.org/2000/svg" width="35" height="35" fill="currentColor"
+                    viewBox="0 0 256 256">
+                    <path
+                        d="M173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z">
+                    </path>
+                </svg></div>
+        </div>
+        <div>
+            <div class="summary-name">Horas Aprovadas</div>
+            <div class="summary-value">{{resumoTotalMes.total_status_approved}}</div>
+        </div>
+    </div>
+    <div class="summary-item">
+        <div class="summary-icon">
+            <div class="icon-bg-red">
+                <svg xmlns="http://www.w3.org/2000/svg" width="35" height="35" fill="currentColor"
+                    viewBox="0 0 256 256">
+                    <path
+                        d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z">
+                    </path>
+                </svg></div>
+        </div>
+        <div>
+            <div class="summary-name">Horas Reprovadas</div>
+            <div class="summary-value">{{resumoTotalMes.total_status_disapproved}}</div>
+        </div>
+    </div>
+    <div class="summary-item">
+        <div class="summary-icon">
+            <div class="icon-bg-blue">
+                <svg xmlns="http://www.w3.org/2000/svg" width="35" height="35" fill="currentColor"
+                    viewBox="0 0 256 256">
+                    <path
+                        d="M136,80v43.47l36.12,21.67a8,8,0,0,1-8.24,13.72l-40-24A8,8,0,0,1,120,128V80a8,8,0,0,1,16,0Zm88-24a8,8,0,0,0-8,8V82c-6.35-7.36-12.83-14.45-20.12-21.83a96,96,0,1,0-2,137.7,8,8,0,0,0-11-11.64A80,80,0,1,1,184.54,71.4C192.68,79.64,199.81,87.58,207,96H184a8,8,0,0,0,0,16h40a8,8,0,0,0,8-8V64A8,8,0,0,0,224,56Z">
+                    </path>
+                </svg></div>
+        </div>
+        <div>
+            <div class="summary-name">Aguardando Aprovação</div>
+            <div class="summary-value">{{resumoTotalMes.total_status_waiting_approval}}</div>
+        </div>
+    </div>
+</div>

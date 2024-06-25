@@ -1,0 +1,62 @@
+.month-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+    gap: 1.5vw;
+
+    padding: 20px;
+    background-color: #6b6b6b;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    margin-top: 20px;
+}
+
+.summary-item {
+    background-color: #b1b1b1;
+    border-radius: 10px;
+    display: grid;
+    grid-template-columns: 1fr 3fr;
+    gap: 0.5vw;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.summary-icon {
+    align-self: center;
+}
+
+.summary-icon div {
+    width: 40px;
+    height: 40px;
+    margin-left: 15px;
+    border-radius: 10px;
+}
+
+.icon-bg-blue {
+    background-color: #225dc054;
+    color: #225dc0;
+}
+
+.icon-bg-green {
+    background-color: #3f9d5054;
+    color: #3f9d50;
+}
+
+.icon-bg-red {
+    background-color: #f44c5654;
+    color: #f44c56;
+}
+
+.summary-icon svg {
+    padding-top: 2px;
+}
+
+.summary-name {
+    text-align: left;
+    font-weight: bold;
+}
+
+.summary-value {
+    text-align: left;
+    font-weight: bold;
+    font-size: x-large;
+}

@@ -1,0 +1,32 @@
+<div class="registro-hora-item {{RegistroHora.status}}">
+  <div class="coluna contrato">{{ RegistroHora.contract_description }}</div>
+  <div class="coluna tipo-hora">{{ getTipoHora(RegistroHora.hour_type) }}</div>
+  <div class="coluna inicio">{{ RegistroHora.start_at }}</div>
+  <div class="coluna fim">{{ RegistroHora.end_at }}</div>
+  <div class="coluna total">{{ RegistroHora.total_time_sheet_hours }}</div>
+  <div class="coluna descricao">{{ RegistroHora.description }}</div>
+  <div class="coluna buttons">
+    <div title="{{RegistroHora.mensagem}}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256">
+        <path
+          d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm64-88a8,8,0,0,1-8,8H128a8,8,0,0,1-8-8V72a8,8,0,0,1,16,0v48h48A8,8,0,0,1,192,128Z">
+        </path>
+      </svg>
+    </div>
+    <div title="Editar" (click)="abrirDialogoEdicao()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256">
+        <path
+          d="M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.68,147.31,64l24-24L216,84.68Z">
+        </path>
+      </svg>
+    </div>
+    <div title="Apagar" (click)="abrirDialogoConfirmacao()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256">
+        <path
+          d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z">
+        </path>
+      </svg>
+    </div>
+  </div>
+
+</div>

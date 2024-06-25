@@ -1,0 +1,51 @@
+<div class="div-voltar">
+    <div (click)="voltar()" class="button-voltar">
+        <div><svg xmlns="http://www.w3.org/2000/svg" width="35" height="35" fill="currentColor" viewBox="0 0 256 256">
+                <path
+                    d="M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z">
+                </path>
+            </svg>
+        </div>
+        <div><span>Voltar</span></div>
+    </div>
+</div>
+<div class="container">
+    <div class="abas">
+        <button *ngFor="let aba of abas" (click)="mudarAba(aba)" [ngClass]="{'active': aba === formularioAtivo}">
+            {{ aba }}
+        </button>
+    </div>
+    <div class="conteudo">
+        <div *ngIf="'Geral' === formularioAtivo">
+            <h1>Geral</h1>
+            <form [formGroup]="formularios['Geral']" (ngSubmit)="salvarConfiguracoes()">
+                <div class="form-group">
+                    <label for="INTEGRATE_ORBIT">Integrar com Orbit:</label>
+                    <input type="checkbox" id="INTEGRATE_ORBIT" formControlName="INTEGRATE_ORBIT" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="AUTO_SYNC_ORBIT">Auto-Sync registros com Orbit:</label>
+                    <input type="checkbox" id="AUTO_SYNC_ORBIT" formControlName="AUTO_SYNC_ORBIT" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="REMINDERS_INTERVAL">Intervalo de notificações:</label>
+                    <select id="REMINDERS_INTERVAL" formControlName="REMINDERS_INTERVAL" class="coluna contrato">
+                        <option [value]="10">10 Minutos</option>
+                        <option [value]="15">15 Minutos</option>
+                        <option [value]="30">30 Minutos</option>
+                        <option [value]="1">1 Hora</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Salvar</button>
+            </form>
+        </div>
+        <div *ngIf="'Notificações' === formularioAtivo">
+            <h1>Notificações</h1>
+        </div>
+        <div *ngIf="'Segurança' === formularioAtivo">
+            <h1>Segurança</h1>
+        </div>
+    </div>
+</div>

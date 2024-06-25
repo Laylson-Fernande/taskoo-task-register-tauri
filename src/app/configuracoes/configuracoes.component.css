@@ -1,0 +1,72 @@
+.container {
+  display: grid;
+  grid-template-columns: 1fr 4fr;
+  padding-top: 0vh;
+  
+  }
+  
+  .abas {
+    /*
+    width: 200px;
+    background-color: #f0f0f0;
+    */
+    width: 20vw;
+  }
+  
+  .abas button {
+    border-radius: 0px;
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+    display: block;
+    width: 100%;
+    margin-bottom: 5px;
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+    text-align: left;
+  }
+  
+  .abas button.active {
+    background-color: #e0e0e0;
+    color: black;
+    font-weight: bold;
+  }
+  
+  .conteudo {
+    border-style: solid;
+    height: 70vh;
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    border-bottom-left-radius: 8px;
+  }
+
+  .div-voltar {
+    padding-bottom: 8vh;
+  }
+
+  .button-voltar{
+    background-color: white;
+    border-radius: 8px;
+    color: black;
+    font-weight: bold;
+    width: 8vw;
+    margin: 10px;
+    height: 40px;
+    display: grid;
+    grid-template-columns: 1fr 4fr;
+    margin-left: 0px;
+    cursor: pointer;
+  }
+
+  .button-voltar div {
+    width: fit-content;
+    align-content: center;
+  }
+
+  .button-voltar div svg {
+    padding-top: 3px;
+  }
+  
+  .form-group {
+    
+  }

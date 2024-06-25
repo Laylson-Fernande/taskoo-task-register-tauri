@@ -1,0 +1,16 @@
+.day-summary {
+    width: fit-content;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5vw;
+}
+
+.summary-item {
+    background-color: #b1b1b1;
+    border-radius: 10px;
+    display: grid;
+    grid-template-columns: 1fr .5fr;
+    gap: 0.5vw;
+    padding: 5px;
+    width: fit-content;
+}
