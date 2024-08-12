@@ -19,9 +19,6 @@ export class AppSettings {
     constructor(private settingsRepository: SettingsRepository,public loadingService: LoadingService) {
         this.loadAllSettings();
     }
-
-    //user_email = 'lfernandes@viceri.com.br';
-    //user_password = 'U2FsdGVkX1/f9mUNfyJ1ezagQonFv1Y06jDFOD2JRp0=';
     passHash = 'orbitseidorprod';
 
     private static settingsMap:Map<string, any> = new Map();
