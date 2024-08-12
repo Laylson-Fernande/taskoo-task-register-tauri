@@ -77,7 +77,9 @@ export class RegistroHoraItemComponent {
             return contrato;
           }
         });
-        this.RegistroHora.contract_description = contrato.description;
+        if(contrato){
+          this.RegistroHora.contract_description = contrato.description;
+        }
       }
     }
   }

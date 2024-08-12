@@ -1,5 +1,6 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectorRef, Inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectorRef, Inject, NgZone } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { listen } from '@tauri-apps/api/event';
 import { firstValueFrom } from 'rxjs';
 import { RegistersRepository } from 'src/services/repositories/registers-repository.service';
 import { RegistersService } from 'src/services/app/registers.service';
@@ -24,7 +25,7 @@ export class RegistroHoraEditarComponent {
   registro: any;
 
   constructor(private orbitClient: OrbitClient, private fb: FormBuilder, private changeDetectorRef: ChangeDetectorRef,
-    private notificationService: NotificationService, private registersRepository: RegistersRepository, private registersService: RegistersService) {
+    private notificationService: NotificationService, private registersRepository: RegistersRepository, private registersService: RegistersService, private zone: NgZone) {
     this.formulario = this.fb.group({
       id: [''],
       orbit_id: [''],
@@ -35,6 +36,12 @@ export class RegistroHoraEditarComponent {
       description: ['', Validators.required],
       release_date: ['', Validators.required],
       total_time_sheet_hours: ['', Validators.required],
+    });
+
+    listen('atualizar-dashboard', (event) => {
+      this.zone.run(() => {
+        this.atualizarForm();
+      });
     });
   }
 

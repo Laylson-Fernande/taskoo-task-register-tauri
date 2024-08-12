@@ -14,7 +14,7 @@
         lembretes e registros de tarefas que serão salvos localmente.</span>
 </div>
 <br>
-<form [formGroup]="loginForm" (ngSubmit)="login()" autocomplete="off">
+<form [formGroup]="loginForm" autocomplete="off">
     <div>
         <div class="form-group">
             <input type="email" id="email" placeholder="E-mail:" formControlName="email" class="form-control" required>
@@ -29,13 +29,13 @@
             <input type="checkbox" formControlName="agreeTerms" required>
             <span>Li e concordo com as informações sobre o Taskoo e sua integração com o Orbit.</span>
             <br>
-            <input type="checkbox" formControlName="saveCredentions" required>
+            <input type="checkbox" formControlName="saveCredentions">
             <span>Salvar credenciais do Orbit para login automático</span>
         </div>
         <div class="div-buttons">
             <button class="bt-cancelar btn btn-primary" (click)="cancelar($event)" >NÃO
                 INTEGRAR</button>
-            <button type="submit" class="btn btn-primary" [disabled]="!loginForm.valid">INTEGRAR COM ORBIT</button>
+            <button class="btn btn-primary" (click)="login($event)" [disabled]="!loginForm.valid">INTEGRAR COM ORBIT</button>
         </div>
     </div>
 </form>

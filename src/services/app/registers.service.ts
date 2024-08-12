@@ -14,16 +14,23 @@ export class RegistersService {
         private appUtils: AppUtils, private notificationService: NotificationService, private registersRepository: RegistersRepository) { }
 
     async obterRegistrosPorDia(date: string) {
-        let registrosOrbit = await this.obterRegistrosPorDiaOrbit(date);
-        await this.salvarRegistrosOrbitnoLocal(registrosOrbit);
-        const registrosLocal = await this.obterRegistrosPorDiaLocal(date);
-        await this.atualizarRegistrosApagadosNoOrbit(registrosLocal, registrosOrbit);
-        const hasRegistrosEnviados = await this.salvarRegistrosLocalnoOrbit(registrosLocal);
-        if (hasRegistrosEnviados) {
-            registrosOrbit = await this.obterRegistrosPorDiaOrbit(date);
+
+        if (await this.validarIntegracaoOrbit()) {
+            let registrosOrbit = await this.obterRegistrosPorDiaOrbit(date);
+            await this.salvarRegistrosOrbitnoLocal(registrosOrbit);
+            const registrosLocal = await this.obterRegistrosPorDiaLocal(date);
+            await this.atualizarRegistrosApagadosNoOrbit(registrosLocal, registrosOrbit);
+            const hasRegistrosEnviados = await this.salvarRegistrosLocalnoOrbit(registrosLocal);
+            if (hasRegistrosEnviados) {
+                registrosOrbit = await this.obterRegistrosPorDiaOrbit(date);
+            }
+            const registrosDia = await this.appUtils.mergeRegistrosSortedBy(registrosOrbit, registrosLocal, "-start_at");
+            return registrosDia;
+        } else {
+            let registrosLocal: any = await this.obterRegistrosPorDiaLocal(date);
+            registrosLocal.sort(this.appUtils.dynamicSort("-start_at"));
+            return registrosLocal;
         }
-        const registrosDia = await this.appUtils.mergeRegistrosSortedBy(registrosOrbit, registrosLocal, "-start_at");
-        return registrosDia;
     }
 
     async obterContratosPorFuncionario() {
@@ -32,15 +39,17 @@ export class RegistersService {
         if (contratosStoraged) {
             contratos = JSON.parse(contratosStoraged);
         } else {
-            try {
-                const response = await firstValueFrom(this.orbitClient.obterContratosPorFuncionario());
-                contratos = response.data.map((item: any) => ({ // Transformação dentro do subscribe
-                    id: item.service_contract.contract_id,
-                    description: item.service_contract.description
-                }));
-                sessionStorage.setItem("contratos", JSON.stringify(contratos));
-            } catch (error) {
-                console.error('Erro ao obter registros:', error);
+            if (await this.validarIntegracaoOrbit()) {
+                try {
+                    const response = await firstValueFrom(this.orbitClient.obterContratosPorFuncionario());
+                    contratos = response.data.map((item: any) => ({ // Transformação dentro do subscribe
+                        id: item.service_contract.contract_id,
+                        description: item.service_contract.description
+                    }));
+                    sessionStorage.setItem("contratos", JSON.stringify(contratos));
+                } catch (error) {
+                    console.error('Erro ao obter contratos:', error);
+                }
             }
         }
         return contratos;
@@ -49,14 +58,17 @@ export class RegistersService {
 
     async criarRegistro(registro: any) {
         const bancoLocal = await this.criarRegistroBanco(registro);
-        const orbit = await this.criarRegistroOrbit(registro);
+        let orbit = false;
+        if (await this.validarIntegracaoOrbit()) {
+            orbit = await this.criarRegistroOrbit(registro);
+        }
         return bancoLocal || orbit;
     }
 
     async alterarRegistro(registro: any) {
         let alteradoOrbit = false;
         let alteradoLocal = false;
-        if (registro.orbit_id) {
+        if (registro.orbit_id && await this.validarIntegracaoOrbit()) {
             alteradoOrbit = await this.alterarRegistroOrbit(registro);
         }
         if (registro.id) {
@@ -67,7 +79,9 @@ export class RegistersService {
 
     async apagarRegistro(registro: any) {
         await this.apagarRegistroLocal(registro);
-        await this.apagarRegistroOrbit(registro);
+        if (await this.validarIntegracaoOrbit) {
+            await this.apagarRegistroOrbit(registro);
+        }
     }
 
 
@@ -75,12 +89,14 @@ export class RegistersService {
 
     private async obterRegistrosPorDiaOrbit(date: string) {
         let registros;
-        try {
-            const orbitParams: OrbitParams = { queryString: `allStatus=true&release_date=${date}` };
-            const response = await firstValueFrom(this.orbitClient.obterRegistrosPorDia(orbitParams));
-            registros = response.data;
-        } catch (erro) {
-            this.notificationService.showNotification('Ocorreu um erro ao obter registros', '', 'error');
+        if (await this.validarIntegracaoOrbit()) {
+            try {
+                const orbitParams: OrbitParams = { queryString: `allStatus=true&release_date=${date}` };
+                const response = await firstValueFrom(this.orbitClient.obterRegistrosPorDia(orbitParams));
+                registros = response.data;
+            } catch (erro) {
+                this.notificationService.showNotification('Ocorreu um erro ao obter registros', '', 'error');
+            }
         }
         return registros;
     }
@@ -274,19 +290,25 @@ export class RegistersService {
             total_status_disapproved: '',
             working_hours: ''
         }
-        try {
-            const resumoMes: any = await firstValueFrom(this.orbitClient.obterResumoTotalMes(startEndMonth.primeiroDia, startEndMonth.ultimoDia));
-            const resumoRegistros: any = await firstValueFrom(this.orbitClient.obterResumoStatusRegitros(startEndMonth.primeiroDia, startEndMonth.ultimoDia));
-            const resumoHoras: any = await firstValueFrom(this.orbitClient.obterResumoHoraTrabalho(startEndMonth.primeiroDia, startEndMonth.ultimoDia));
-            resumoTotalMes = {
-                total_sum_hours_recorded: resumoMes.data.total_sum_hours_recorded,
-                total_status_approved: resumoRegistros.data.total_status_approved,
-                total_status_waiting_approval: resumoRegistros.data.total_status_waiting_approval,
-                total_status_disapproved: resumoRegistros.data.total_status_disapproved,
-                working_hours: resumoHoras.data.working_hours
-            };
-        } catch (error) {
+        if(await this.validarIntegracaoOrbit){
+            try {
+                const resumoMes: any = await firstValueFrom(this.orbitClient.obterResumoTotalMes(startEndMonth.primeiroDia, startEndMonth.ultimoDia));
+                const resumoRegistros: any = await firstValueFrom(this.orbitClient.obterResumoStatusRegitros(startEndMonth.primeiroDia, startEndMonth.ultimoDia));
+                const resumoHoras: any = await firstValueFrom(this.orbitClient.obterResumoHoraTrabalho(startEndMonth.primeiroDia, startEndMonth.ultimoDia));
+                resumoTotalMes = {
+                    total_sum_hours_recorded: resumoMes.data.total_sum_hours_recorded,
+                    total_status_approved: resumoRegistros.data.total_status_approved,
+                    total_status_waiting_approval: resumoRegistros.data.total_status_waiting_approval,
+                    total_status_disapproved: resumoRegistros.data.total_status_disapproved,
+                    working_hours: resumoHoras.data.working_hours
+                };
+            } catch (error) {
+            }
         }
         return resumoTotalMes;
+    }
+
+    async validarIntegracaoOrbit() {
+        return await this.orbitClient.verificarIntegracaoOrbit();
     }
 }

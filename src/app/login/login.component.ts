@@ -25,20 +25,18 @@ export class LoginComponent {
       agreeTerms: ['', Validators.required],
       saveCredentions: ''
     });
-    this.login();
+    //this.login();
   }
 
-  async login() {
+  async login(event: Event) {
     const formValues = this.loginForm.value;
 
     const cPassword = CryptoJS.AES.encrypt(formValues.password, this.appSettings.passHash).toString();
-    //const isAuthenticated = await this.loginOrbit(formValues.email, cPassword);
-    const isAuthenticated = await this.loginOrbit(this.appSettings.user_email, this.appSettings.user_password);
+    const isAuthenticated = await this.loginOrbit(formValues.email, cPassword);
+    //const isAuthenticated = await this.loginOrbit(this.appSettings.user_email, this.appSettings.user_password);
     if (isAuthenticated) {
-      if(formValues.saveCredentions){
-        console.log("Salvar e-mail e senha");
-      }
-      this.appSettings.integrarComOrbit(true);
+      await this.appSettings.saveUserOrbitCredentials(formValues.email, cPassword, formValues.saveCredentions);
+      await this.appSettings.SaveIntegrarComOrbit(true);
       this.router.navigate(['/dashboard']);
     }
 
@@ -46,7 +44,7 @@ export class LoginComponent {
 
   async loginOrbit(email: string, cPassword: string) {
     try {
-      const isAuthenticated = await this.authService.login(this.appSettings.user_email, this.appSettings.user_password);
+      const isAuthenticated = await this.authService.login(email, cPassword);
       return isAuthenticated;
     }
     catch (erro) {
@@ -55,9 +53,10 @@ export class LoginComponent {
     }
   }
 
-  cancelar(event: Event) {
-    //this.appSettings.integrarComOrbit(false);
+  async cancelar(event: Event) {
+    await this.appSettings.SaveIntegrarComOrbit(false);
+    //event.preventDefault();
+    event.stopPropagation();
     this.router.navigate(['/dashboard']);
-    event.preventDefault();
   }
 }

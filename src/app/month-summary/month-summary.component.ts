@@ -1,5 +1,6 @@
-import { Component, Input, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, ChangeDetectorRef, NgZone } from '@angular/core';
 import { RegistersService } from 'src/services/app/registers.service';
+import { listen } from '@tauri-apps/api/event';
 
 @Component({
   selector: 'app-month-summary',
@@ -18,7 +19,13 @@ export class MonthSummaryComponent {
     working_hours: ''
   }
 
-  constructor(private registersService: RegistersService, private changeDetectorRef: ChangeDetectorRef) { }
+  constructor(private registersService: RegistersService, private changeDetectorRef: ChangeDetectorRef, private zone: NgZone) { 
+    listen('atualizar-dashboard', (event) => {
+      this.zone.run(() => {
+        this.atualizarResumo(this.currentDate);
+      });
+    });
+  }
 
   ngOnInit() {
     this.atualizarResumo(this.currentDate);

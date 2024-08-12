@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { invoke } from "@tauri-apps/api/tauri";
 import { WebviewWindow } from '@tauri-apps/api/window'
+import { CheckUpdate } from 'src/utils/atualizar';
 
 @Component({
   selector: 'app-dialog-start-reminders',
@@ -8,6 +9,10 @@ import { WebviewWindow } from '@tauri-apps/api/window'
   styleUrls: ['./dialog-start-reminders.component.css']
 })
 export class DialogStartRemindersComponent {
+
+  constructor(private checkUpdate: CheckUpdate){
+    //this.checkUpdate.atualizar();
+  }
 
   async onNoClick(): Promise<void> {
     invoke<string>("start_reminders", { isStartReminders:false }).then();

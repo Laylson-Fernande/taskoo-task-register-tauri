@@ -1,13 +1,16 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, firstValueFrom } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { listen } from '@tauri-apps/api/event';
+import { Router } from '@angular/router';
+import { AppSettings } from 'src/utils/app.settings';
 
 interface UserAuthtentication {
     token: string;
     data: {
         pk: string;
         user_id: string;
+        name: string;
     };
 }
 
@@ -25,7 +28,14 @@ export class AuthService {
     private currentUserSubject = new BehaviorSubject<any>(null);
     currentUser$ = this.currentUserSubject.asObservable();
 
-    constructor(private http: HttpClient) { }
+    constructor(private http: HttpClient, private zone: NgZone,  private router: Router, private appSettings: AppSettings) {
+
+        listen('logout-orbit', (event) => {
+            this.zone.run(() => {
+              this.logout();
+            });
+          });
+     }
 
     async login(userEmail: string, password: string) {
 
@@ -37,8 +47,9 @@ export class AuthService {
             sessionStorage.setItem('token', response.token);
             sessionStorage.setItem('x-api-key', response.data.pk);
             sessionStorage.setItem('user_id', response.data.user_id);
+            sessionStorage.setItem('user_name', response.data.name);
             let date = new Date();
-            date.setHours(date.getHours() + 2);
+            date.setHours(date.getHours() + 3);
             sessionStorage.setItem('token-lifetime', date.getTime().toString())
             this.currentUserSubject.next(response);
             return true;
@@ -74,6 +85,8 @@ export class AuthService {
     logout() {
         sessionStorage.removeItem('token');
         this.currentUserSubject.next(null);
+        this.appSettings.saveUserOrbitCredentials("","", true);
+        this.router.navigate(['/login']);
     }
 
     isAuthenticated(): boolean {

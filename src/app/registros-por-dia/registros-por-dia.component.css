@@ -1,3 +1,7 @@
+.registros-por-dia{
+margin-top: 20px;
+}
+
 .day-navegation{
     padding-bottom: 10px;
     text-align: left;
@@ -16,6 +20,7 @@
     margin-top: auto;
     margin-bottom: auto;
     padding-top: 7px;
+    color: black;
 }
 
 .day-navegation-date{
@@ -27,3 +32,45 @@
     max-height: 50vh; /* Defina a altura máxima desejada */
     overflow-y: auto; 
 }
+
+.sync_orbit {
+    padding-bottom: 10px;
+    text-align: right;
+    cursor: pointer;
+}
+
+.sync_orbit_container {
+    background-color: #6b6b6b;
+    border-radius: 10px;
+    height: 100%;
+}
+
+.sync_orbit_container:hover {
+    
+    background-color: #5c5c5c;
+}
+
+.sync_orbit_centered-content {
+    display: flex;
+    align-items: center;
+    justify-content: center; 
+    height: 100%;
+}
+
+.sync_orbit_span {
+    padding: 10px;
+}
+
+.top-options {
+display: flex;
+justify-content: space-between;
+width: 100%;
+}
+
+.div-button:hover{
+    color: white;
+  }
+  
+  .div-button{
+    cursor: pointer;
+  }

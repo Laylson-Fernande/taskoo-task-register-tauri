@@ -13,3 +13,10 @@
     margin-inline: 10px;
   }
 
+  .button-no {
+    background-color: #af554c !important; 
+  }
+
+  .button-yes {
+    background-color: #4CAF50 !important;
+  }

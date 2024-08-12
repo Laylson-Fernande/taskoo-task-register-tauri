@@ -26,9 +26,11 @@ import { DialogNoteReminderComponent } from './dialog-note-reminder/dialog-note-
 import { ConfiguracoesComponent } from './configuracoes/configuracoes.component';
 import { MonthSummaryComponent } from './month-summary/month-summary.component';
 import { DaySummaryComponent } from './day-summary/day-summary.component';
+import { DialogChangeAutorunComponent } from './dialog-change-autorun/dialog-change-autorun.component';
+import { LoggedUserInformationComponent } from './logged-user-information/logged-user-information.component';
 
 @NgModule({
-  declarations: [AppComponent, RegistroHoraItemComponent, RegistrosPorDiaComponent, RegistroHoraEditarComponent, HoraMaskDirective, ConfirmacaoExclusaoRegistroComponent, RegistroHoraEditarDialogComponent, NotificationComponent, DialogWindowComponent, AppWindowComponent, DialogStartRemindersComponent, LoginComponent, DialogNoteReminderComponent, ConfiguracoesComponent, MonthSummaryComponent, DaySummaryComponent],
+  declarations: [AppComponent, RegistroHoraItemComponent, RegistrosPorDiaComponent, RegistroHoraEditarComponent, HoraMaskDirective, ConfirmacaoExclusaoRegistroComponent, RegistroHoraEditarDialogComponent, NotificationComponent, DialogWindowComponent, AppWindowComponent, DialogStartRemindersComponent, LoginComponent, DialogNoteReminderComponent, ConfiguracoesComponent, MonthSummaryComponent, DaySummaryComponent, DialogChangeAutorunComponent, LoggedUserInformationComponent],
   imports: [BrowserModule, MatDialogModule, NgxMaskDirective, 
     NgxMaskPipe, ReactiveFormsModule ,FormsModule, HttpClientModule, AppRoutingModule],
   providers: [{ provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },

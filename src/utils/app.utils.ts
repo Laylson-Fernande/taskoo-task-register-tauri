@@ -64,8 +64,10 @@ export class AppUtils {
             local.forEach((registroLocal: any) => {
                 let index = orbit.findIndex((registroOrbit: any) => this.compareRegistros(registroOrbit, registroLocal));
                 if (index !== -1) {
-                    orbit.splice(index, 1);
+                    const registroOrbit = orbit[index];
                     registroLocal.status = "SYNCED"
+                    registroLocal.contract_description = registroOrbit.contract_description;
+                    orbit.splice(index, 1);
                 }
                 registrosMerged.push(registroLocal);
             });

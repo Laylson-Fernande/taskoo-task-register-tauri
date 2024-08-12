@@ -1,0 +1,13 @@
+version: '1.0.0'  # Versão atual do seu aplicativo
+notes: 'Notas de lançamento da versão 1.0.0'  # Descrição da atualização (opcional)
+pub_date: '2024-06-25T00:00:00-03:00'  # Data da publicação (opcional)
+platforms:
+  windows:
+    signature: 'ASSINATURA_WINDOWS_AQUI'  # Assinatura do arquivo ZIP (opcional)
+    url: 'https://github.com/Laylson-Fernande/taskoo-task-register-tauri/releases/download/1.0.0/task-register-tauri_0.0.0_x64_en-US.msi.zip'  # URL do arquivo ZIP
+  darwin:
+    signature: 'ASSINATURA_MACOS_AQUI'  # Assinatura do arquivo DMG (opcional)
+    url: 'https://github.com/Laylson-Fernande/taskoo-task-register-tauri/releases/download/1.0.0/task-register-tauri_0.0.0_x64_en-US.msi.dmg'  # URL do arquivo DMG
+  linux:
+    signature: 'ASSINATURA_LINUX_AQUI'  # Assinatura do arquivo AppImage (opcional)
+    url: 'https://github.com/Laylson-Fernande/taskoo-task-register-tauri/releases/download/1.0.0/task-register-tauri_0.0.0_x64_en-US.msi.AppImage'  # URL do arquivo AppImage

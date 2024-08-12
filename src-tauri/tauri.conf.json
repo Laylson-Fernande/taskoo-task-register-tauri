@@ -7,7 +7,7 @@
     "withGlobalTauri": false
   },
   "package": {
-    "productName": "task-register-tauri",
+    "productName": "Taskoo",
     "version": "0.0.0"
   },
   "tauri": {
@@ -20,7 +20,9 @@
       "window": {
         "close": true,
         "show": true,
-        "hide":true
+        "hide":true,
+        "setFocus": true,
+        "maximize": true
       }
     },
     "bundle": {
@@ -31,14 +33,26 @@
         "icons/cuckoo/128x128@2x.ico",
         "icons/cuckoo/icon.png"
       ],
-      "identifier": "com.task.register",
-      "targets": "all"
+      "identifier": "Taskoo",
+      "targets": "all",
+      "publisher": "Laylson Fernandes",
+      "shortDescription": "Taskoo - Lembretes para registrar tarefas",
+      "longDescription": "O Taskoo é uma ferramenta projetada para lembrar e simplificar o registro de tarefas",
+      "copyright": "© 2024 Laylson Fernandes"
     },
     "security": {
       "csp": null
     },
     "updater": {
-      "active": false
+      "active": true,
+      "endpoints": [
+       "https://gist.githubusercontent.com/Laylson-Fernande/bb7458cac0ad86d9f21a081e17e172c5/raw"
+      ],
+      "dialog": true,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDMyRTMxNEZGNEYzRDhCMDQKUldRRWl6MVAveFRqTWhneHQybGpXUEFaVFN2RDgvRGFyMTZ0ZFMrajF1Y2cxYW1hYlhVQVd2MUEK",
+      "windows": {
+        "installMode": "passive"
+      }
     },
     "windows": [
       {
@@ -46,7 +60,7 @@
         "url":"/dashboard",
         "fullscreen": false,
         "maximized": true,
-        "title": "Taskoo - Lembretes de tarefas",
+        "title": "Taskoo - Lembretes para registrar tarefas",
         "width": 800,
         "height": 600,
         "visible": false
@@ -64,9 +78,23 @@
         "center": true
       },
       {
+        "label": "change-autorun",
+        "url":"/dialog/change-autorun",
+        "title": "Taskoo - Lembretes para registrar tarefas",
+        "maximizable": false,
+        "resizable": false,
+        "closable": true,
+        "minimizable": false,
+        "alwaysOnTop": true,
+        "width": 675,
+        "height": 151,
+        "visible": false,
+        "center": true
+      },
+      {
         "label": "start-reminders",
         "url":"/dialog/start-reminders",
-        "title": "Taskoo - Lembretes de tarefas",
+        "title": "Taskoo - Lembretes para registrar tarefas",
         "maximizable": false,
         "resizable": false,
         "closable": false,
@@ -80,10 +108,10 @@
       {
         "label": "note-reminder",
         "url":"/dialog/note-reminder",
-        "title": "Taskoo - Lembretes de tarefas",
+        "title": "Taskoo - Lembretes para registrar tarefas",
         "maximizable": false,
         "resizable": false,
-        "closable": false,
+        "closable": true,
         "minimizable": false,
         "alwaysOnTop": true,
         "width": 700,
@@ -95,6 +123,21 @@
     "systemTray": {
       "iconPath": "icons/cuckoo/icon.png",
       "iconAsTemplate": true
+    }
+  },
+  "plugins": {
+    "log": {
+      "targets": ["logDir", "console"],
+      "level": "info",
+      "file": {
+        "level": "error",
+        "path": "app.log",
+        "format": "%F %T",
+        "rotation": {
+          "strategy": "daily",
+          "max_files": 10
+        }
+      }
     }
   }
 }

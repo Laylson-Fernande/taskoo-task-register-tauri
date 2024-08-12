@@ -1,6 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { Router } from '@angular/router';
+import { AuthService } from '../authentication/auth.service';
+import { AppSettings } from 'src/utils/app.settings';
 
 // Interface para definir os parâmetros da requisição
 export interface OrbitParams {
@@ -17,7 +20,23 @@ export class OrbitClient {
 
   private apiUrl = '';
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, private router: Router, private authService: AuthService, private appSettings: AppSettings) { }
+
+  async verificarIntegracaoOrbit() {
+    if(this.authService.isAuthenticated()){
+      return true;
+    } else {
+      if (this.appSettings.isIntegratedOrbit()) {
+        try {
+          await this.authService.login(this.appSettings.getUserOrbitEmail(), this.appSettings.getUserOrbitPassword());
+          return true;
+        } catch (erro) {
+          this.router.navigate(['/login']);
+        }
+      }
+    }
+    return false;
+  }
 
   obterRegistrosPorDia(params?: OrbitParams): Observable<any> {
     const url = `${this.apiUrl_officeservice}/time-sheet/release-by-day${params?.queryString ? '?' + params.queryString : ''}`;
@@ -56,18 +75,18 @@ export class OrbitClient {
     return this.http.delete(`${this.apiUrl_officeservice}/time-sheet/${id}`);
   }
 
-  obterResumoTotalMes(release_date_start: string, release_date_end: string): Observable<any>{
+  obterResumoTotalMes(release_date_start: string, release_date_end: string): Observable<any> {
     const url = `${this.apiUrl_officeservice}/time-sheet/month-total-summary?release_date_start=${release_date_start}&release_date_end=${release_date_end}`;
-    return this.http.get(url, { });
+    return this.http.get(url, {});
   }
 
-  obterResumoStatusRegitros(release_date_start: string, release_date_end: string): Observable<any>{
+  obterResumoStatusRegitros(release_date_start: string, release_date_end: string): Observable<any> {
     const url = `${this.apiUrl_officeservice}/time-sheet/status-hours-recorded-summary?release_date_start=${release_date_start}&release_date_end=${release_date_end}`;
-    return this.http.get(url, { });
+    return this.http.get(url, {});
   }
 
-  obterResumoHoraTrabalho(release_date_start: string, release_date_end: string): Observable<any>{
+  obterResumoHoraTrabalho(release_date_start: string, release_date_end: string): Observable<any> {
     const url = `${this.apiUrl_officeservice}/time-sheet/working-hours-summary?release_date_start=${release_date_start}&release_date_end=${release_date_end}&week_summary=false`;
-    return this.http.get(url, { });
+    return this.http.get(url, {});
   }
 }
