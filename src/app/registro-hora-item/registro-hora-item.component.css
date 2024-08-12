@@ -57,6 +57,13 @@
   background-color: #af554c;
 }
 
+.div-button:hover{
+  color: white;
+}
+
+.div-button{
+  cursor: pointer;
+}
 
 /*
 .coluna.descricao {

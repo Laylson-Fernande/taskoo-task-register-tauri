@@ -6,6 +6,7 @@ import { formatDate } from '@angular/common';
 import { OrbitClient, OrbitParams } from 'src/services/orbit/orbitClient';
 import { Howl } from 'howler';
 import { RegistersService } from 'src/services/app/registers.service';
+import { EventService } from 'src/utils/event-service';
 
 @Component({
   selector: 'app-dialog-note-reminder',
@@ -21,7 +22,7 @@ export class DialogNoteReminderComponent {
     src: ['assets/audio/cuckoo.mp3']
   });
 
-  constructor(private zone: NgZone, private registersService:RegistersService) {
+  constructor(private zone: NgZone, private registersService:RegistersService, private eventService: EventService) {
     listen('atualizar-note-reminder', (event) => {
       this.zone.run(() => {
         this.atualizar();
@@ -50,6 +51,10 @@ export class DialogNoteReminderComponent {
     const app = await WebviewWindow.getByLabel('main');
     if (app) {
       await app.show();
+      await app.setFocus();
+      await app.maximize();
+      await app.emit("atualizar-dashboard","");
+      //this.eventService.emitEvent('atualizar-dashboard', { some: 'data' });
       this.fecharDialog();
     }
   }

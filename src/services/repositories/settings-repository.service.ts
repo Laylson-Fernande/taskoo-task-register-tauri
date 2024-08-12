@@ -35,7 +35,7 @@ export class SettingsRepository {
 
     getIconfiguracao(configuracao:any): Configuracao {
         const iConfiguracao:Configuracao = {
-            id: configuracao.id ? configuracao.id : "",
+            id: configuracao.id ? configuracao.id : 0,
             identifier: configuracao.identifier ? configuracao.identifier : "",
             default_value: configuracao.default_value ? configuracao.default_value : "",
             custom_value: configuracao.custom_value ? configuracao.custom_value : "",

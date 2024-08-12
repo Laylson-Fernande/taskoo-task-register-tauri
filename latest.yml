@@ -1,6 +1,6 @@
 version: '1.0.0'  # Versão atual do seu aplicativo
 notes: 'Notas de lançamento da versão 1.0.0'  # Descrição da atualização (opcional)
-pub_date: '2024-06-25'  # Data da publicação (opcional)
+pub_date: '2024-06-25T00:00:00-03:00'  # Data da publicação (opcional)
 platforms:
   windows:
     signature: 'ASSINATURA_WINDOWS_AQUI'  # Assinatura do arquivo ZIP (opcional)

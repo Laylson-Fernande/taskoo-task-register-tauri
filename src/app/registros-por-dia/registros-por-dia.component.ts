@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef, ViewChild } from '@angular/core';
+import { Component, ChangeDetectorRef, ViewChild, NgZone, OnInit, OnDestroy } from '@angular/core';
 import { formatDate } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -6,6 +6,10 @@ import { RegistersService } from 'src/services/app/registers.service';
 import { AppSettings } from 'src/utils/app.settings';
 import { AuthService } from 'src/services/authentication/auth.service';
 import { MonthSummaryComponent } from '../month-summary/month-summary.component';
+import { EventService } from 'src/utils/event-service';
+import { Subscription } from 'rxjs';
+import { listen } from '@tauri-apps/api/event';
+import { appWindow } from '@tauri-apps/api/window';
 
 @Component({
   selector: 'app-registros-por-dia',
@@ -21,9 +25,15 @@ export class RegistrosPorDiaComponent {
   @ViewChild(MonthSummaryComponent) monthSummaryComponent!: MonthSummaryComponent;
 
   constructor(private fb: FormBuilder, private registersService: RegistersService, private changeDetectorRef: ChangeDetectorRef,
-    private appSettings: AppSettings, private authService: AuthService, private router: Router) {
+    private appSettings: AppSettings, private authService: AuthService, private router: Router, private zone: NgZone, private eventService: EventService) {
     this.form = this.fb.group({
       currentDate: [new Date()]
+    });
+
+    listen('atualizar-dashboard', (event) => {
+      this.zone.run(() => {
+        this.atualizarListaRegistros();
+      });
     });
   }
 
@@ -81,6 +91,18 @@ export class RegistrosPorDiaComponent {
       } else {
         localStorage.removeItem("lastRegister");
       }
+    }
+  }
+
+  isIntegratedOrbit(){
+    return this.appSettings.isIntegratedOrbit();
+  }
+
+  sincronizarRegistrosOrbit(integradoOrbit: boolean) {
+    if(integradoOrbit){
+      this.atualizarListaRegistros();
+    } else {
+      this.router.navigate(['/login']);
     }
   }
 }
