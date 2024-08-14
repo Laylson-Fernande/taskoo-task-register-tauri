@@ -22,7 +22,7 @@ export class DialogNoteReminderComponent {
     src: ['assets/audio/cuckoo.mp3']
   });
 
-  constructor(private zone: NgZone, private registersService:RegistersService, private eventService: EventService) {
+  constructor(private zone: NgZone, private registersService:RegistersService) {
     listen('atualizar-note-reminder', (event) => {
       this.zone.run(() => {
         this.atualizar();

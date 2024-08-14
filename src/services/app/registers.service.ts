@@ -44,7 +44,8 @@ export class RegistersService {
                     const response = await firstValueFrom(this.orbitClient.obterContratosPorFuncionario());
                     contratos = response.data.map((item: any) => ({ // Transformação dentro do subscribe
                         id: item.service_contract.contract_id,
-                        description: item.service_contract.description
+                        description: item.service_contract.description,
+                        code:  item.service_contract.code
                     }));
                     sessionStorage.setItem("contratos", JSON.stringify(contratos));
                 } catch (error) {
@@ -78,9 +79,15 @@ export class RegistersService {
     }
 
     async apagarRegistro(registro: any) {
-        await this.apagarRegistroLocal(registro);
-        if (await this.validarIntegracaoOrbit) {
-            await this.apagarRegistroOrbit(registro);
+        try{
+            if (registro.orbit_id && registro.orbit_id.length > 0 && await this.validarIntegracaoOrbit) {
+                await this.apagarRegistroOrbit(registro);
+            }
+            await this.apagarRegistroLocal(registro);
+        } catch (httpErroResponse: any) {
+            registro.status = "ERROR";
+            registro.mensagem = "Ocorreu um erro ao tentar excluir o registro no Orbit: "  + JSON.stringify(httpErroResponse.error.errors);
+            await this.alterarRegistroLocal(registro, true);
         }
     }
 
@@ -114,7 +121,7 @@ export class RegistersService {
                     if (index === -1) {
                         registroLocal.orbit_id = "";
                         registroLocal.status = "REMOVED-FROM-ORBIT";
-                        registroLocal.mensagem = "Registro excluído no Orbit, e está disponivel apenas no local";
+                        registroLocal.mensagem = "O registro foi removido do Orbit e agora está disponível apenas no banco de dados local. Você pode excluir o registro do banco local ou editá-lo para enviá-lo ao Orbit novamente.";
                         await this.registersRepository.atualizarRegistro(registroLocal.id, registroLocal);
                     }
                 }
@@ -173,7 +180,7 @@ export class RegistersService {
                         hasRegistrosEnviados = true;
                     } catch (httpErroResponse: any) {
                         registro.status = "ERROR"
-                        registro.mensagem = JSON.stringify(httpErroResponse.error);
+                        registro.mensagem = "Ocorreu um erro ao tentar salvar esse registro no Orbit: " + JSON.stringify(httpErroResponse.error.errors);
                         await this.registersRepository.atualizarRegistro(registro.id, registro);
                     }
                 } else if (registro.orbit_id && registro.orbit_id.length !== 0 && registro.status === "PENDING-UPDATE") {
@@ -196,7 +203,7 @@ export class RegistersService {
     private async criarRegistroBanco(registro: any) {
         const registroLocal = structuredClone(registro);
         registroLocal.status = "PENDING";
-        registroLocal.mensagem = "Registro salvo apenas no local";
+        registroLocal.mensagem = "O registro foi criado com sucesso, mas ainda não foi sincronizado com o Orbit.";
         const response = await this.registersRepository.inserirRegistro(registroLocal);
         if (response == 1) {
             this.notificationService.showNotification('Registro criado com sucesso!', '', 'success');
@@ -244,9 +251,12 @@ export class RegistersService {
         if (registroLocal.end_at.length > 5) {
             registroLocal.end_at = registroLocal.end_at.substring(0, 5);
         }
-        if (!alteradoOrbit) {
+        if (!registro.orbit_id || registro.orbit_id.length == 0) {
+            registroLocal.status = "PENDING";
+            registroLocal.mensagem = "O registro foi alterado com sucesso, mas ainda não foi sincronizado com o Orbit.";
+        } else if (!alteradoOrbit) {
             registroLocal.status = "PENDING-UPDATE";
-            registroLocal.mensagem = "Registro alterado apenas no local";
+            registroLocal.mensagem = "O registro foi alterado, mas as atualizações ainda não foram sincronizadas com o Orbit.";
         }
         try {
             if (registro.id) {
@@ -264,8 +274,9 @@ export class RegistersService {
         try {
             const response = await firstValueFrom(this.orbitClient.deletarRegistro(registro.orbit_id));
             this.notificationService.showNotification('Registro excluído no Orbit com sucesso!', '', 'success');
-        } catch (error) {
+        } catch (httpErroResponse: any) {
             this.notificationService.showNotification('Ocorreu um erro ao excluir o registro no Orbit', '', 'error');
+            throw httpErroResponse;
         }
     }
 

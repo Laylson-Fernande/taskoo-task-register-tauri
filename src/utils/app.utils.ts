@@ -67,6 +67,8 @@ export class AppUtils {
                     const registroOrbit = orbit[index];
                     registroLocal.status = "SYNCED"
                     registroLocal.contract_description = registroOrbit.contract_description;
+                    registroLocal.contract_code = registroOrbit.contract_code;
+                    registroLocal.status_orbit = registroOrbit.status;
                     orbit.splice(index, 1);
                 }
                 registrosMerged.push(registroLocal);
@@ -74,7 +76,7 @@ export class AppUtils {
             orbit.forEach((registroOrbit: any) => {
                 registroOrbit.id = null;
                 registroOrbit.status = "PENDING";
-                registroOrbit.mensagem = "Registro salvo apenas no Orbit";
+                registroOrbit.mensagem = "O registro foi obtido do Orbit, mas ainda não está salvo no banco de dados local.";
                  registrosMerged.push(registroOrbit) 
                 });
         }

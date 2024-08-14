@@ -45,8 +45,8 @@ export class RegistroHoraEditarComponent {
     });
   }
 
-  contratos: { id: string, description: string }[] = [
-    { id: "", description: '' }
+  contratos: { id: string, description: string, code: string }[] = [
+    { id: "", description: '', code:'' }
   ];
 
   tipos_horas: { id: string, description: string }[] = [

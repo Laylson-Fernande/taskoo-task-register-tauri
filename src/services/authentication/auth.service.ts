@@ -49,7 +49,7 @@ export class AuthService {
             sessionStorage.setItem('user_id', response.data.user_id);
             sessionStorage.setItem('user_name', response.data.name);
             let date = new Date();
-            date.setHours(date.getHours() + 3);
+            date.setHours(date.getHours() + 20);
             sessionStorage.setItem('token-lifetime', date.getTime().toString())
             this.currentUserSubject.next(response);
             return true;
@@ -94,7 +94,8 @@ export class AuthService {
         if(tokenLifeTime){
             const currentTime = new Date().getTime();
             if(currentTime > Number(tokenLifeTime)) {
-                this.logout();
+                sessionStorage.removeItem('token');
+                sessionStorage.removeItem('x-api-key');
             }
         }
         return !!sessionStorage.getItem('token') && !!sessionStorage.getItem('x-api-key');

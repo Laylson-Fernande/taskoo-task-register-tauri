@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../authentication/auth.service';
 import { AppSettings } from 'src/utils/app.settings';
 
@@ -20,10 +20,13 @@ export class OrbitClient {
 
   private apiUrl = '';
 
-  constructor(private http: HttpClient, private router: Router, private authService: AuthService, private appSettings: AppSettings) { }
+  constructor(private http: HttpClient, private router: Router, private activatedRoute: ActivatedRoute, private authService: AuthService, private appSettings: AppSettings) { }
 
   async verificarIntegracaoOrbit() {
     if(this.authService.isAuthenticated()){
+      //const a = this.activatedRoute
+      const current = this.router.url;
+      console.log(current);
       return true;
     } else {
       if (this.appSettings.isIntegratedOrbit()) {
@@ -31,7 +34,10 @@ export class OrbitClient {
           await this.authService.login(this.appSettings.getUserOrbitEmail(), this.appSettings.getUserOrbitPassword());
           return true;
         } catch (erro) {
-          this.router.navigate(['/login']);
+          const current = this.router.url;
+          if(!current.startsWith("/dialog")){
+            this.router.navigate(['/login']);
+          }
         }
       }
     }

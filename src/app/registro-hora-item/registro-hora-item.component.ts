@@ -17,6 +17,7 @@ export class RegistroHoraItemComponent {
     orbit_id: string,
     contract_id: string,
     contract_description: string,
+    contract_code:string,
     hour_type: string,
     start_at: string,
     end_at: string,
@@ -24,6 +25,7 @@ export class RegistroHoraItemComponent {
     description: string,
     release_date: string
     status: string,
+    status_orbit: string,
     mensagem: string,
     editar: string,
     apagar: string
@@ -32,6 +34,7 @@ export class RegistroHoraItemComponent {
       orbit_id: '',
       contract_id: '',
       contract_description: '',
+      contract_code:'',
       hour_type: '',
       start_at: '',
       end_at: '',
@@ -39,12 +42,15 @@ export class RegistroHoraItemComponent {
       description: '',
       release_date: '',
       status: '',
+      status_orbit:'',
       mensagem:'',
       editar: '',
       apagar: ''
     };
 
   @Output() registroAlterado = new EventEmitter<any>();
+
+  private mouseHover :boolean = false;
 
   constructor(public dialog: MatDialog, private orbitClient: OrbitClient, private registersService: RegistersService) { }
 
@@ -79,6 +85,7 @@ export class RegistroHoraItemComponent {
         });
         if(contrato){
           this.RegistroHora.contract_description = contrato.description;
+          this.RegistroHora.contract_code = contrato.code;
         }
       }
     }
@@ -119,4 +126,16 @@ export class RegistroHoraItemComponent {
       }
     });
   }
-}
+
+  mouseenter(){
+    this.mouseHover = true;
+  }
+
+  mouseleave() {
+    this.mouseHover = false;
+  }
+
+  showMensagem(){
+    return this.mouseHover && this.RegistroHora.mensagem.length > 0;
+  }
+} 
