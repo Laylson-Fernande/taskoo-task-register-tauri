@@ -156,22 +156,7 @@ fn select_configuracao(identifier: String) -> Result<Vec<Configuracao>, String> 
     let configuracoes: Vec<Configuracao> = configuracoes_iter.map(|r| r.unwrap()).collect();
     Ok(configuracoes)
 }
-/*
-#[tauri::command]
-fn insert_registro(contract_id: String, hour_type: String, start_at: String, end_at: String, description: String, release_date: String, status: String, mensagem: String) -> Result<usize, String> {
-    //let conn = Connection::open(DB_NAME).unwrap();
-    //let mut stmt = conn.prepare("INSERT INTO registros (contract_id, hour_type, start_at, end_at, description, release_date, status, mensagem) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")?;
-    //stmt.execute(params![contract_id, hour_type, start_at, end_at, description, release_date, status, mensagem])?;
 
-    let conn = Connection::open(DB_NAME).map_err(|e| e.to_string())?;
-    conn.execute("INSERT INTO registros (contract_id, hour_type, start_at, end_at, description, release_date, status, mensagem) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [contract_id, hour_type, start_at, end_at, description, release_date, status, mensagem])
-        .map_err(|e| e.to_string())
-    /*
-    conn.execute("INSERT INTO registros (contract_id, hour_type, start_at, end_at, description, release_date, status, mensagem) VALUES (?, ?, ?, ?, ?, ?, ?, ?);",
-     [contract_id, hour_type, start_at, end_at, description, release_date, status, mensagem]).unwrap();
-        Ok(()) */
-}
-*/
 #[tauri::command]
 fn select_registros(release_date: String) -> Result<Vec<Registro>, String> {
     let conn = open_db_connection();
@@ -259,9 +244,6 @@ fn atualizar(app_handle: tauri::AppHandle) {
         unsafe {
             reminders_interval = REMINDERS_INTERVAL;
         }
-        if segundos > 5 {
-            //thread::sleep(time::Duration::from_secs(u64::from(60 - segundos)));
-        }
         if minuto % reminders_interval == 0 {
             let app_window = app_handle.get_window("main").unwrap();
             if true || !app_window.is_visible().unwrap() {
@@ -290,6 +272,11 @@ fn show_dialog_change_autorun(app_handle: tauri::AppHandle) {
     change_autorun.show().unwrap();
 }
 
+fn show_dialog_receie_reminders(app_handle: tauri::AppHandle) {
+    let receie_reminders = app_handle.get_window("start-reminders").unwrap();
+    receie_reminders.show().unwrap();
+}
+
 fn logout_orbit(app_handle: tauri::AppHandle) {
     let main_window = app_handle.get_window("main").unwrap();
     main_window.emit(&"logout-orbit", "").unwrap();
@@ -314,13 +301,20 @@ fn main() {
     );
 
     let options_item_2 = CustomMenuItem::new(
+        "receie_reminders",
+        "Ativar/Desativar Lembretes",
+    );
+
+    let options_item_3 = CustomMenuItem::new(
        "logout", "Logout Orbit"
     );
 
     let options_menu = SystemTrayMenu::new()
     .add_item(options_item_1)
     .add_native_item(SystemTrayMenuItem::Separator)
-    .add_item(options_item_2);
+    .add_item(options_item_2)
+    .add_native_item(SystemTrayMenuItem::Separator)
+    .add_item(options_item_3);
 
     let options_submenu = SystemTraySubmenu::new("Opções", options_menu);
 
@@ -380,6 +374,9 @@ fn main() {
                 "logout" => {
                     logout_orbit(app.app_handle());
                 }
+                "receie_reminders"  => {
+                    show_dialog_receie_reminders(app.app_handle());
+                }
                 "report_failure" => {
                     let _ = shell::open(&app.shell_scope(), "https://github.com/Laylson-Fernande/taskoo-task-register-tauri/issues/new", None);
                 }
@@ -389,7 +386,6 @@ fn main() {
         })
         .setup(|app| {
             let app_handle = app.app_handle();
-            //thread::sleep(time::Duration::from_secs(u64::from( 60 - Local::now().second())));
             thread::spawn(move || loop {
                 atualizar(app_handle.clone());
             });

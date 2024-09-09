@@ -47,8 +47,10 @@
     <app-registro-hora-editar [dateRelease]="formattedDate"
         (registroAlterado)="atualizarListaRegistros()"></app-registro-hora-editar>
     <div class="registros-lista">
-        <app-registro-hora-item *ngFor="let registro of registrosDia" [RegistroHora]="registro"
+        <div class="registros-lista-container">
+            <app-registro-hora-item *ngFor="let registro of registrosDia" [RegistroHora]="registro"
             (registroAlterado)="atualizarListaRegistros()"></app-registro-hora-item>
+        </div>
     </div>
     <div>
     </div>

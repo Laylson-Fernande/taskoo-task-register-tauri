@@ -64,11 +64,33 @@
   .coluna.contrato {
     font-weight: bold;
     text-align: left;
-    width: 100%;
+    width: 25vw;
   }
   
+  .coluna.tipo-hora {
+    width: 12.5vw;
+  }
+
+  .coluna.inicio {
+    width: 4.25vw;
+  }
+
+  .coluna.fim {
+    width: 4.25vw;
+  }
+
+  .coluna.total {
+    width: 4.25vw;
+  }
+
   .coluna.descricao {
     text-align: left;
+    width: 32.5vw;
+  }
+
+  .coluna.descricao.editing {
+    text-align: left;
+    width: auto;
   }
 
   /*

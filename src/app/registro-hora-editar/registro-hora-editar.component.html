@@ -10,7 +10,7 @@
 </div>
 <form class="registro-hora-editar" autocomplete="off" [formGroup]="formulario" (ngSubmit)="salvar()">
   <select id="contract_id" formControlName="contract_id" class="coluna contrato">
-    <option *ngFor="let contrato of contratos" [value]="contrato.id">{{ contrato.description }}</option>
+    <option *ngFor="let contrato of contratos" [value]="contrato.id">{{ contrato.code+" - "+contrato.description }}</option>
   </select>
   <select id="hour_type" formControlName="hour_type" class="coluna tipo-hora">
     <option *ngFor="let tipo_hora of tipos_horas" [value]="tipo_hora.id">{{ tipo_hora.description }}</option>
@@ -18,7 +18,7 @@
   <input type="text" appHoraMask placeholder="00:00" [(ngModel)]="formulario.value.start_at" (ngModelChange)="horaAlterada($event, 'start_at')" id="start_at" formControlName="start_at" class="coluna inicio">
   <input type="text" appHoraMask placeholder="23:59" [(ngModel)]="formulario.value.end_at" (ngModelChange)="horaAlterada($event, 'end_at')" id="end_at" formControlName="end_at" class="coluna fim">
   <input type="text" id="total_time_sheet_hours" readonly formControlName="total_time_sheet_hours"  class="coluna total">
-  <input type="text" id="description" formControlName="description" class="coluna descricao">
+  <input type="text" id="description" formControlName="description" class="coluna descricao" [ngClass]="isEditing ?'editing':''">
   <div class="div-buttons">
     <button *ngIf="isEditing" (click)="cancelar($event)" class="bt-cancelar btn btn-primary">Cancelar</button>
     <button type="submit" class="btn btn-primary">Salvar</button>
