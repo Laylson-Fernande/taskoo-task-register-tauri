@@ -33,6 +33,22 @@ export class RegistersService {
         }
     }
 
+    async obterResumoDia(date: string) {
+        const resumoTaskoo: any = await this.registersRepository.consultarTotalHorasDia(date);
+        const resumoDia: any = {};
+        if(resumoTaskoo && resumoTaskoo.length > 0){
+            resumoDia.total_taskoo = resumoTaskoo[0].total_horas_dia;
+        }
+        if (await this.validarIntegracaoOrbit()) {
+            const resumoOrbit: any = await firstValueFrom(this.orbitClient.obterResumoDia(date));
+            if(resumoOrbit) {
+                resumoDia.total_hour_daily = resumoOrbit.data.total_hour_daily;
+                resumoDia.balance_hours_daily = resumoOrbit.data.balance_hours_daily;
+            }
+        }
+        return resumoDia;
+    }
+
     async obterContratosPorFuncionario() {
         let contratos: any;
         const contratosStoraged = sessionStorage.getItem("contratos");
@@ -45,7 +61,7 @@ export class RegistersService {
                     contratos = response.data.map((item: any) => ({ // Transformação dentro do subscribe
                         id: item.service_contract.contract_id,
                         description: item.service_contract.description,
-                        code:  item.service_contract.code
+                        code: item.service_contract.code
                     }));
                     sessionStorage.setItem("contratos", JSON.stringify(contratos));
                 } catch (error) {
@@ -79,20 +95,22 @@ export class RegistersService {
     }
 
     async apagarRegistro(registro: any) {
-        try{
+        try {
             if (registro.orbit_id && registro.orbit_id.length > 0 && await this.validarIntegracaoOrbit) {
                 await this.apagarRegistroOrbit(registro);
             }
             await this.apagarRegistroLocal(registro);
         } catch (httpErroResponse: any) {
             registro.status = "ERROR";
-            registro.mensagem = "Ocorreu um erro ao tentar excluir o registro no Orbit: "  + JSON.stringify(httpErroResponse.error.errors);
+            registro.mensagem = "Ocorreu um erro ao tentar excluir o registro no Orbit: " + JSON.stringify(httpErroResponse.error.errors);
             await this.alterarRegistroLocal(registro, true);
         }
     }
 
-
-
+    async reprocessarRegistro(registro: any){
+        registro.reprocess = true;
+        await this.reprocessarRegistroOrbit(registro);
+    }
 
     private async obterRegistrosPorDiaOrbit(date: string) {
         let registros;
@@ -121,7 +139,7 @@ export class RegistersService {
                     if (index === -1) {
                         registroLocal.orbit_id = "";
                         registroLocal.status = "REMOVED-FROM-ORBIT";
-                        registroLocal.mensagem = "O registro foi removido do Orbit e agora está disponível apenas no banco de dados local. Você pode excluir o registro do banco local ou editá-lo para enviá-lo ao Orbit novamente.";
+                        registroLocal.mensagem = "O registro foi removido do Orbit e agora está disponível apenas no Taskoo. Você pode excluir o registro do Taskoo ou editá-lo para enviá-lo ao Orbit novamente.";
                         await this.registersRepository.atualizarRegistro(registroLocal.id, registroLocal);
                     }
                 }
@@ -190,7 +208,10 @@ export class RegistersService {
                         registro.status = "SYNCED"
                         registro.mensagem = "";
                         await this.registersRepository.atualizarRegistro(registro.id, registro);
-                    } catch (error) {
+                    } catch (httpErroResponse: any) {
+                        registro.status = "ERROR"
+                        registro.mensagem = "Ocorreu um erro ao tentar atualizar esse registro no Orbit: " + JSON.stringify(httpErroResponse.error.errors);
+                        await this.registersRepository.atualizarRegistro(registro.id, registro);
                     }
 
                 }
@@ -220,6 +241,26 @@ export class RegistersService {
             return true;
         } catch (error) {
             this.notificationService.showNotification('Ocorreu um erro ao criar o registro no Orbit.', '', 'error');
+            return false;
+        }
+    }
+
+    private async reprocessarRegistroOrbit(registro: any) {
+        let registroOrbit = structuredClone(registro);
+        const orbit_id = registroOrbit.orbit_id;
+        if (registroOrbit.start_at.length > 5) {
+            registroOrbit.start_at = registroOrbit.start_at.substring(0, 5);
+        }
+        if (registroOrbit.end_at.length > 5) {
+            registroOrbit.end_at = registroOrbit.end_at.substring(0, 5);
+        }
+        try {
+            const response = await firstValueFrom(this.orbitClient.alterarRegistro(orbit_id, registroOrbit));
+            this.notificationService.showNotification('Registro alterado no Orbit com sucesso!', '', 'success');
+            return true;
+        } catch (httpErroResponse: any) {
+            this.notificationService.showNotification('Ocorreu um erro ao alterar o registro no Orbit.', httpErroResponse.error.errors[0], 'error');
+            //this.notificationService.showNotification(httpErroResponse.errors[0], '', 'error');
             return false;
         }
     }
@@ -298,10 +339,10 @@ export class RegistersService {
             total_sum_hours_recorded: '',
             total_status_approved: '',
             total_status_waiting_approval: '',
-            total_status_disapproved: '',
+            total_status_error: '',
             working_hours: ''
         }
-        if(await this.validarIntegracaoOrbit){
+        if (await this.validarIntegracaoOrbit) {
             try {
                 const resumoMes: any = await firstValueFrom(this.orbitClient.obterResumoTotalMes(startEndMonth.primeiroDia, startEndMonth.ultimoDia));
                 const resumoRegistros: any = await firstValueFrom(this.orbitClient.obterResumoStatusRegitros(startEndMonth.primeiroDia, startEndMonth.ultimoDia));
@@ -310,7 +351,7 @@ export class RegistersService {
                     total_sum_hours_recorded: resumoMes.data.total_sum_hours_recorded,
                     total_status_approved: resumoRegistros.data.total_status_approved,
                     total_status_waiting_approval: resumoRegistros.data.total_status_waiting_approval,
-                    total_status_disapproved: resumoRegistros.data.total_status_disapproved,
+                    total_status_error: resumoRegistros.data.total_status_error,
                     working_hours: resumoHoras.data.working_hours
                 };
             } catch (error) {

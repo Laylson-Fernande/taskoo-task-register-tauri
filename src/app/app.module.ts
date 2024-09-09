@@ -28,11 +28,13 @@ import { MonthSummaryComponent } from './month-summary/month-summary.component';
 import { DaySummaryComponent } from './day-summary/day-summary.component';
 import { DialogChangeAutorunComponent } from './dialog-change-autorun/dialog-change-autorun.component';
 import { LoggedUserInformationComponent } from './logged-user-information/logged-user-information.component';
+import { DialogCheckUpdateComponent } from './dialog-check-update/dialog-check-update.component';
+import { CalendarModule } from 'primeng/calendar';
 
 @NgModule({
-  declarations: [AppComponent, RegistroHoraItemComponent, RegistrosPorDiaComponent, RegistroHoraEditarComponent, HoraMaskDirective, ConfirmacaoExclusaoRegistroComponent, RegistroHoraEditarDialogComponent, NotificationComponent, DialogWindowComponent, AppWindowComponent, DialogStartRemindersComponent, LoginComponent, DialogNoteReminderComponent, ConfiguracoesComponent, MonthSummaryComponent, DaySummaryComponent, DialogChangeAutorunComponent, LoggedUserInformationComponent],
+  declarations: [AppComponent, RegistroHoraItemComponent, RegistrosPorDiaComponent, RegistroHoraEditarComponent, HoraMaskDirective, ConfirmacaoExclusaoRegistroComponent, RegistroHoraEditarDialogComponent, NotificationComponent, DialogWindowComponent, AppWindowComponent, DialogStartRemindersComponent, LoginComponent, DialogNoteReminderComponent, ConfiguracoesComponent, MonthSummaryComponent, DaySummaryComponent, DialogChangeAutorunComponent, LoggedUserInformationComponent, DialogCheckUpdateComponent],
   imports: [BrowserModule, MatDialogModule, NgxMaskDirective, 
-    NgxMaskPipe, ReactiveFormsModule ,FormsModule, HttpClientModule, AppRoutingModule],
+    NgxMaskPipe, ReactiveFormsModule ,FormsModule, HttpClientModule, AppRoutingModule, CalendarModule],
   providers: [{ provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
     { provide: HTTP_INTERCEPTORS, useClass: LoadingInterceptor, multi: true }, provideNgxMask()],
   bootstrap: [AppComponent],

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../authentication/auth.service';
@@ -24,9 +24,7 @@ export class OrbitClient {
 
   async verificarIntegracaoOrbit() {
     if(this.authService.isAuthenticated()){
-      //const a = this.activatedRoute
       const current = this.router.url;
-      console.log(current);
       return true;
     } else {
       if (this.appSettings.isIntegratedOrbit()) {
@@ -93,6 +91,11 @@ export class OrbitClient {
 
   obterResumoHoraTrabalho(release_date_start: string, release_date_end: string): Observable<any> {
     const url = `${this.apiUrl_officeservice}/time-sheet/working-hours-summary?release_date_start=${release_date_start}&release_date_end=${release_date_end}&week_summary=false`;
+    return this.http.get(url, {});
+  }
+
+  obterResumoDia(release_date: string){
+    const url = `${this.apiUrl_officeservice}/time-sheet/daily-summary?release_date=${release_date}`;
     return this.http.get(url, {});
   }
 }

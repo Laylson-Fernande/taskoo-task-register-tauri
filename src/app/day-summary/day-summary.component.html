@@ -1,12 +1,8 @@
 <div>
     <div class="day-summary">
-        <div class="summary-item">
-            <div>Saldo do dia:</div>
-            <div>00:00</div>
-        </div>
-        <div class="summary-item">
-            <div>Total Horas:</div>
-            <div>00:00</div>
+        <div *ngFor="let item of summary_itens" class="summary-item">
+            <div class="summary-title">{{item.title}}</div>
+            <div class="summary-value">{{item.value}}</div>
         </div>
     </div>
 </div>

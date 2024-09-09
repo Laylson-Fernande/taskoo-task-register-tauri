@@ -32,6 +32,7 @@
                 </div>
             </div>
         </div>
+
         <div class="sync_orbit" >
             <div class="sync_orbit_container">
                 <div class="sync_orbit_centered-content"  *ngIf="isIntegratedOrbit()" (click)="sincronizarRegistrosOrbit(true)">
@@ -44,14 +45,15 @@
         </div>
     </div>
 
-    <app-registro-hora-editar [dateRelease]="formattedDate"
-        (registroAlterado)="atualizarListaRegistros()"></app-registro-hora-editar>
+    <app-registro-hora-editar [dateRelease]="formattedDate" (registroAlterado)="atualizarListaRegistros()"></app-registro-hora-editar>
     <div class="registros-lista">
         <div class="registros-lista-container">
             <app-registro-hora-item *ngFor="let registro of registrosDia" [RegistroHora]="registro"
-            (registroAlterado)="atualizarListaRegistros()"></app-registro-hora-item>
+            ></app-registro-hora-item>
         </div>
     </div>
-    <div>
+    <div class="button-infos">
+        <div></div>
+        <app-day-summary [currentDate]="currentDate"></app-day-summary>
     </div>
 </div>

@@ -1,5 +1,6 @@
 <div class="notification-container">
     <div *ngFor="let notification of notifications" class="notification" [ngClass]="notification.type" [@fadeAnimation]>
-        {{ notification.message }}
+        <div>{{ notification.message }}</div>
+        <div>{{notification.details}}</div>
     </div>
 </div>

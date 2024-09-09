@@ -16,7 +16,7 @@ RUST_BACKTRACE = 1
 tauri-build = { version = "1.2", features = [] }
 
 [dependencies]
-tauri = { version = "1.2", features = [ "shell-open", "window-maximize", "window-set-focus", "updater", "window-hide", "window-show", "window-close", "system-tray"] }
+tauri = { version = "1.2", features = [ "http-request", "fs-all", "shell-open", "window-maximize", "window-set-focus", "window-hide", "window-show", "window-close", "system-tray"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 lazy_static = "1.4.0"

@@ -15,12 +15,21 @@ import { LoadingService } from './loading.service'; // Crie um serviço para ger
 export class LoadingInterceptor implements HttpInterceptor {
   constructor(private loadingService: LoadingService) {}
 
-  intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    this.loadingService.setLoading(true); // Inicia o carregamento
+  notShowLoading: string[] = [
+    "month-total-summary",
+    "status-hours-recorded-summary",
+    "working-hours-summary",
+    "daily-summary",
+  ]
 
+  intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
+    const index = this.notShowLoading.findIndex(endpoint => request.url.toLocaleLowerCase().includes(endpoint.toLocaleLowerCase()));
+    if(index == -1){
+      this.loadingService.setLoading(true);
+    }
     return next.handle(request).pipe(
       finalize(() => {
-        this.loadingService.setLoading(false); // Finaliza o carregamento
+        this.loadingService.setLoading(false);
       })
     );
   }

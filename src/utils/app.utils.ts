@@ -7,6 +7,16 @@ import { retry } from 'rxjs';
 
 export class AppUtils {
 
+    static somarHoras(hora1: string, hora2: string): string {
+    
+        const minutos1 = this.converterParaMinutos(hora1);
+        const minutos2 = this.converterParaMinutos(hora2);
+    
+        const totalMinutos = minutos1 + minutos2;
+    
+        return this.converterMinutosParaHorario(totalMinutos);
+    }
+
     static getTotalTimeSheetHours(start_at: string, end_at: string) {
         let result = "00:00";
         if (start_at && end_at) {
@@ -127,12 +137,12 @@ export class AppUtils {
         const ultimoDia = new Date(ano, mes + 1, 0); 
       
         return {
-          primeiroDia: this.formatarData(primeiroDia),
-          ultimoDia: this.formatarData(ultimoDia)
+          primeiroDia: AppUtils.formatarData(primeiroDia),
+          ultimoDia: AppUtils.formatarData(ultimoDia)
         };
       }
 
-      private formatarData(data: Date) {
+      static formatarData(data: Date): string {
         const yyyy = data.getFullYear();
         const mm = String(data.getMonth() + 1).padStart(2, '0');
         const dd = String(data.getDate()).padStart(2, '0');

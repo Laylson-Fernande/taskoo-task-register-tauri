@@ -45,6 +45,11 @@
     color: #f44c56;
 }
 
+.icon-bg-yellow {
+    background-color: #ffb83354;
+    color: #cd8602;
+}
+
 .summary-icon svg {
     padding-top: 2px;
 }

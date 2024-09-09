@@ -4,7 +4,7 @@
 use chrono::{Local, Timelike};
 use rusqlite::{Connection, Result};
 use serde::{Deserialize, Serialize};
-use std::{path::PathBuf, thread, time};
+use std::{env::current_dir, path::PathBuf, thread, time};
 use tauri::{CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem, SystemTraySubmenu, WindowEvent, generate_context
 };
 use tauri_plugin_autostart::MacosLauncher;
@@ -12,6 +12,10 @@ use tauri::api::shell;
 use tauri::api::path::app_data_dir;
 use std::fs;
 use tauri_plugin_log::{LogTarget};
+use std::process::Command;
+use std::fs::{File, metadata};
+use std::io::Write;
+use std::path::Path;
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
 static mut RECEIVE_REMINDERS: bool = false;
@@ -34,6 +38,11 @@ struct Registro {
     mensagem: String,
     created_at: String,
     updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ResumoDia {
+    total_horas_dia:String
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -231,6 +240,22 @@ fn select_ifexist_registro(registro: Registro) -> Result<Vec<Registro>, String> 
     Ok(registros)
 }
 
+#[tauri::command]
+fn get_total_horas_dia(release_date: String) -> Result<Vec<ResumoDia>, String> {
+    let conn = open_db_connection();
+    let mut stmt = conn.prepare("SELECT printf('%02d:%02d', SUM(difference_in_seconds) / 3600, (SUM(difference_in_seconds) % 3600) / 60) AS total_dia FROM
+(SELECT strftime('%s', end_at) - strftime('%s', start_at) AS difference_in_seconds FROM registros WHERE release_date = ?)")
+        .map_err(|e| e.to_string())?;
+    let result_iter = stmt
+        .query_map([release_date], |row| {
+            Ok(ResumoDia{ total_horas_dia: row.get(0)?})
+        })
+        .map_err(|e| e.to_string())?;
+
+    let result: Vec<ResumoDia> = result_iter.map(|r| r.unwrap()).collect();
+    Ok(result)
+}
+
 fn atualizar(app_handle: tauri::AppHandle) {
     let receie_reminders: bool;
     unsafe {
@@ -290,10 +315,12 @@ fn main() {
     let context = generate_context!();
     let config = &context.config();
     let app_data_path= app_data_dir(config).unwrap();
+    
     if !app_data_path.exists() {
         let _ = fs::create_dir_all(&app_data_path);
     }
     create_db_default(app_data_path.clone()).unwrap();
+    //executar_script_powershell_update( app_data_path.clone().into_os_string().into_string().unwrap(), current_dir.into_os_string().into_string().unwrap(), config.package.product_name.clone().unwrap());
 
     let options_item_1 = CustomMenuItem::new(
         "autostart_enable",
@@ -410,7 +437,10 @@ fn main() {
             update_configuracao,
             reset_configuracoes,
             select_configuracoes,
-            select_configuracao
+            select_configuracao,
+            get_version,
+            executar_script_powershell_update,
+            get_total_horas_dia
         ])
         .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(vec![])))
         .plugin(tauri_plugin_log::Builder::default().targets([
@@ -420,6 +450,61 @@ fn main() {
         ]).build())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[tauri::command]
+fn get_version() -> String {
+    let version = tauri::generate_context!().package_info().version.to_string();
+    version
+}
+
+#[tauri::command]
+fn executar_script_powershell_update() {
+    let context = generate_context!();
+    let config = &context.config();
+    let app_data_path= app_data_dir(config).unwrap();
+    let current_dir = current_dir().unwrap();
+
+    let source_path: String = app_data_path.clone().into_os_string().into_string().unwrap();
+    let destination_path: String = current_dir.into_os_string().into_string().unwrap();
+    let file_name: String = config.package.product_name.clone().unwrap();
+
+    // Caminho para o script PowerShell
+    let script_path =  source_path.clone() + "\\UpdateTaskoo.ps1";
+
+    create_ps_update_script(script_path.clone().as_str()).unwrap_or_else(|e| {
+        eprintln!("Failed to create powershell update script: {}", e);
+    });
+
+    // Executa o script PowerShell com os parâmetros fornecidos
+    let output = Command::new("powershell")
+        .arg("-NoProfile")
+        .arg("-ExecutionPolicy")
+        .arg("Bypass")
+        .arg("-File")
+        .arg(script_path)
+        .arg("-SourcePath")
+        .arg(source_path)
+        .arg("-DestinationPath")
+        .arg(destination_path)
+        .arg("-FileName")
+        .arg(file_name.clone() + ".exe")
+        .output();
+
+    match output {
+        Ok(output) => {
+            if output.status.success() {
+                let result = String::from_utf8_lossy(&output.stdout).to_string();
+                println!("executar_script_powershell_update success: {}",result);
+                //Ok(result)
+            } else {
+                let error: String = String::from_utf8_lossy(&output.stderr).to_string();
+                print!("executar_script_powershell_update error: {}",error);
+                //Err(error)
+            }
+        }
+        Err(e) =>  eprintln!("Erro ao executar o script PowerShell UpdateTaskoo : {}", e),
+    }
 }
 
 fn set_db_name(db_name: String) {
@@ -502,5 +587,59 @@ fn create_db_default(mut app_data_path: PathBuf) -> Result<()> {
         ('AUTORUN.APPLICATION','true','');",
         (),
     )?;
+    Ok(())
+}
+
+
+fn create_ps_update_script(file_path: &str) -> std::io::Result<()> {
+
+    if Path::new(file_path).exists() {
+        println!("O arquivo '{}' já existe. Nenhuma ação foi tomada.", file_path);
+        return Ok(()); // Retorna sem fazer nada se o arquivo já existir
+    }
+
+    let script_content = r#"
+param (
+    [string]$Url,
+    [string]$SourcePath,  # Caminho da pasta de origem
+    [string]$DestinationPath,  # Caminho da pasta de destino
+    [string]$FileName  # Nome do arquivo a ser copiado
+)
+
+# Combina o caminho de origem com o nome do arquivo
+$SourceFile = Join-Path -Path $SourcePath -ChildPath $FileName
+
+# Combina o caminho de destino com o nome do arquivo
+$DestinationFile = Join-Path -Path $DestinationPath -ChildPath $FileName
+
+try {
+    # Baixar o arquivo da URL fornecida e salvá-lo no caminho especificado
+    Invoke-WebRequest -Uri $Url -OutFile $SourceFile
+    Write-Host "Arquivo baixado com sucesso para $DestinationPath"
+} catch {
+    Write-Host "Erro ao baixar o arquivo: $_"
+}
+
+# Verifica se o arquivo de origem existe
+if (Test-Path $SourceFile) {
+    try {
+        Stop-Process -Name "Taskoo" -Force
+        # Copia o arquivo para o destino, substituindo se já existir
+        Copy-Item -Path $SourceFile -Destination $DestinationFile -Force
+        
+        Start-Process $DestinationFile
+        Write-Host "Arquivo copiado com sucesso!"
+    } catch {
+        Write-Host "Erro ao copiar o arquivo: $_"
+    }
+} else {
+    Write-Host "O arquivo de origem não foi encontrado."
+}
+"#;
+
+    let path = Path::new(file_path);
+    let mut file = File::create(&path)?;
+    file.write_all(script_content.as_bytes())?;
+
     Ok(())
 }

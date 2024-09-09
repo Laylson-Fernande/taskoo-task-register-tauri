@@ -86,6 +86,37 @@
   transform: translateY(0%); /* Ajusta o afastamento ao passar o mouse */
 }
 
+.svg-container {
+  width: 24px;
+  height: 24px;
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.svg-container svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transition: opacity 0.3s ease;
+}
+
+.svg-container .default {
+  opacity: 1;
+}
+
+.svg-container .hover {
+  opacity: 0;
+}
+
+.svg-container:hover .default {
+  opacity: 0;
+}
+
+.svg-container:hover .hover {
+  opacity: 1;
+}
+
 .WAITING_APPROVAL {
   color :#0061ff
 }
