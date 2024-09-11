@@ -28,6 +28,11 @@ export class DialogNoteReminderComponent {
         this.atualizar();
       });
     });
+    listen('stop-sound-notification', (event) => {
+      this.zone.run(() => {
+        this.stopSoundNotification();
+      });
+    });
   }
 
   atualizar() {
@@ -44,6 +49,12 @@ export class DialogNoteReminderComponent {
       this.sound.volume(1);
       this.sound.loop(true);
       this.sound.play();
+    }
+  }
+
+  stopSoundNotification() {
+    if (this.sound.playing()) {
+      this.sound.stop();
     }
   }
 
@@ -69,11 +80,11 @@ export class DialogNoteReminderComponent {
 
   criarNovoRegistro() {
     this.redirectToDashboard();
-    this.sound.stop();
+    this.stopSoundNotification();
   }
 
   async atualizarUltimoRegistro() {
-    this.sound.stop();
+    this.stopSoundNotification();
     this.lastRegister.end_at = this.newHourFinal;
     const alterado = await this.registersService.alterarRegistro(this.lastRegister);
     if(!alterado){
@@ -84,7 +95,7 @@ export class DialogNoteReminderComponent {
   }
 
   fecharLembrete() {
+    this.stopSoundNotification();
     this.fecharDialog();
-    this.sound.stop();
   }
 }

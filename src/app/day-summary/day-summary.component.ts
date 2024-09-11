@@ -41,7 +41,7 @@ export class DaySummaryComponent {
       if (resumoDia.total_hour_daily && resumoDia.balance_hours_daily) {
         summary.push({ title: "Saldo do dia:", value: resumoDia.balance_hours_daily })
         if (resumoDia.balance_hours_daily.includes("-")) {
-          summary.push({ title: "Total Horas:", value: resumoDia.balance_hours_daily })
+          summary.push({ title: "Total Horas:", value: resumoDia.total_hour_daily })
         } else {
           const totalHoras = AppUtils.somarHoras(resumoDia.balance_hours_daily, resumoDia.total_hour_daily);
           summary.push({ title: "Total Horas:", value: totalHoras })

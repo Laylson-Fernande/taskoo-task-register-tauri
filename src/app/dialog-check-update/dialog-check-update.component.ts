@@ -31,6 +31,8 @@ export class DialogCheckUpdateComponent {
       this.latest_version = latest_release.name;
       this.release_link = latest_release.html_url;
       this.exibirDialog();
+    } else {
+      this.closeDialogView();
     }
   }
 
@@ -78,7 +80,7 @@ export class DialogCheckUpdateComponent {
   async closeDialogView(): Promise<void> {
     const webView = await WebviewWindow.getByLabel('check-update');
     if (webView) {
-      await webView.hide();
+      await webView.close();
     }
   }
 

@@ -138,7 +138,7 @@
         "alwaysOnTop": true,
         "width": 700,
         "height": 200,
-        "visible": true,
+        "visible": false,
         "center": true
       }
     ],

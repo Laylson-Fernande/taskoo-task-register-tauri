@@ -421,8 +421,20 @@ fn main() {
         })
         .on_window_event(|event| match event.event() {
             WindowEvent::CloseRequested { api, .. } => {
+                let window = event.window();
+                let label = window.label();
+
+                match label {
+                    "note-reminder" => {
+                        window.emit(&"stop-sound-notification", "").unwrap();
+                    }
+                    _ => {
+
+                        api.prevent_close();
+                    }
+                }
                 event.window().hide().unwrap();
-                api.prevent_close(); // Impede o fechamento da janela
+                api.prevent_close(); 
             }
             _ => {}
         })
@@ -612,21 +624,56 @@ $SourceFile = Join-Path -Path $SourcePath -ChildPath $FileName
 # Combina o caminho de destino com o nome do arquivo
 $DestinationFile = Join-Path -Path $DestinationPath -ChildPath $FileName
 
-try {
-    # Baixar o arquivo da URL fornecida e salvá-lo no caminho especificado
-    Invoke-WebRequest -Uri $Url -OutFile $SourceFile
-    Write-Host "Arquivo baixado com sucesso para $DestinationPath"
-} catch {
-    Write-Host "Erro ao baixar o arquivo: $_"
+function Test-Permission {
+    param (
+        [string]$Path
+    )
+
+    try {
+        # Testa a permissão de escrita criando e excluindo um arquivo temporário
+        $testFile = [System.IO.Path]::Combine($Path, [System.Guid]::NewGuid().ToString() + ".tmp")
+        $stream = [System.IO.File]::Create($testFile)
+        $stream.Close()
+        Remove-Item $testFile -Force
+        return $true
+    } catch {
+        return $false
+    }
+}
+
+function Restart-ScriptAsAdmin {
+    param (
+        [string]$ScriptPath,
+        [string]$Url,
+        [string]$SourcePath,
+        [string]$DestinationPath,
+        [string]$FileName
+    )
+
+    # Prepara argumentos para reiniciar o script como administrador
+    $arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$ScriptPath`" -Url `"$Url`" -SourcePath `"$SourcePath`" -DestinationPath `"$DestinationPath`" -FileName `"$FileName`""
+    Start-Process powershell -ArgumentList $arguments -Verb RunAs
+    exit
+}
+
+# Verifica permissões de escrita no diretório de destino
+if (-not (Test-Permission -Path (Split-Path $DestinationFile -Parent))) {
+    Write-Host "Sem permissão para escrever no diretório de destino. Tentando reiniciar como administrador..."
+    # Reinicia o script como administrador
+    $scriptPath = $MyInvocation.MyCommand.Path
+    Restart-ScriptAsAdmin -ScriptPath $scriptPath -Url $Url -SourcePath $SourcePath -DestinationPath $DestinationPath -FileName $FileName
 }
 
 # Verifica se o arquivo de origem existe
 if (Test-Path $SourceFile) {
     try {
-        Stop-Process -Name "Taskoo" -Force
+        # Encerra o processo do programa, se estiver em execução
+        Stop-Process -Name "Taskoo" -ErrorAction SilentlyContinue -Force
+        Start-Sleep -Seconds 2
         # Copia o arquivo para o destino, substituindo se já existir
         Copy-Item -Path $SourceFile -Destination $DestinationFile -Force
         
+        # Inicia o programa copiado
         Start-Process $DestinationFile
         Write-Host "Arquivo copiado com sucesso!"
     } catch {
