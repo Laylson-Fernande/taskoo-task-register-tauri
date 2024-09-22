@@ -8,7 +8,7 @@
   },
   "package": {
     "productName": "Taskoo",
-    "version": "1.1.0"
+    "version": "1.2.0"
   },
   "tauri": {
     "allowlist": {
@@ -23,6 +23,14 @@
         "hide":true,
         "setFocus": true,
         "maximize": true
+      },
+      "fs": {
+        "all": true,
+        "scope": ["$APPDATA/*"]
+      },
+      "http": {
+        "request": true,
+        "scope": ["https://github.com/Laylson-Fernande/taskoo-task-register-tauri/releases/download/*"]
       }
     },
     "bundle": {
@@ -44,7 +52,7 @@
       "csp": null
     },
     "updater": {
-      "active": true,
+      "active": false,
       "endpoints": [
        "https://gist.githubusercontent.com/Laylson-Fernande/bb7458cac0ad86d9f21a081e17e172c5/raw"
       ],
@@ -108,6 +116,20 @@
       {
         "label": "note-reminder",
         "url":"/dialog/note-reminder",
+        "title": "Taskoo - Lembretes para registrar tarefas",
+        "maximizable": false,
+        "resizable": false,
+        "closable": true,
+        "minimizable": false,
+        "alwaysOnTop": true,
+        "width": 700,
+        "height": 200,
+        "visible": false,
+        "center": true
+      },
+      {
+        "label": "check-update",
+        "url":"/dialog/check-update",
         "title": "Taskoo - Lembretes para registrar tarefas",
         "maximizable": false,
         "resizable": false,

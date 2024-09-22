@@ -1,0 +1,19 @@
+<div>
+    <div>
+        <div>
+            <strong>Nova Atualização Disponível!</strong>
+        </div>
+        <div class="notification-body">
+            Olá! Uma nova versão do TASKOO está disponível: <strong>Versão {{latest_version}}</strong>.
+        </div>
+        <div class="notification-footer">
+            Para conferir todas as melhorias e novidades, <a href="#"
+                (click)="openLink(); $event.preventDefault();">clique aqui para consultar as informações da nova
+                versão</a>.
+        </div>
+    </div>
+    <div class="mat-dialog-actions">
+        <button class="mat-button button-no" (click)="onNoClick()">Não, obrigado.</button>
+        <button class="mat-button button-yes" (click)="onYesClick()">Sim, atualizar agora!</button>
+    </div>
+</div>

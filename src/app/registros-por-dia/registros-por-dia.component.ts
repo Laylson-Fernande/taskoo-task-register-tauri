@@ -10,6 +10,8 @@ import { EventService } from 'src/utils/event-service';
 import { Subscription } from 'rxjs';
 import { listen } from '@tauri-apps/api/event';
 import { appWindow } from '@tauri-apps/api/window';
+import { DaySummaryComponent } from '../day-summary/day-summary.component';
+import { PrimeNGConfig } from 'primeng/api';
 
 @Component({
   selector: 'app-registros-por-dia',
@@ -23,9 +25,15 @@ export class RegistrosPorDiaComponent {
   form: FormGroup;
 
   @ViewChild(MonthSummaryComponent) monthSummaryComponent!: MonthSummaryComponent;
+  @ViewChild(DaySummaryComponent) daySummaryComponent!: DaySummaryComponent;
+
+  specialDays: Set<string> = new Set([
+    '2024-09-15', // exemplo de data
+    '2024-09-25'
+  ]);
 
   constructor(private fb: FormBuilder, private registersService: RegistersService, private changeDetectorRef: ChangeDetectorRef,
-    private appSettings: AppSettings, private authService: AuthService, private router: Router, private zone: NgZone, private eventService: EventService) {
+    private appSettings: AppSettings, private authService: AuthService, private router: Router, private zone: NgZone, private eventService: EventService, private primeNgConfig: PrimeNGConfig) {
     this.form = this.fb.group({
       currentDate: [new Date()]
     });
@@ -35,6 +43,21 @@ export class RegistrosPorDiaComponent {
         this.atualizarListaRegistros();
       });
     });
+
+    this.primeNgConfig.setTranslation({
+      apply: 'Aplicar',
+      clear: 'Limpar',
+      accept: 'Sim',
+      reject: 'Não',
+      firstDayOfWeek: 0,
+      dayNames: ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'],
+      dayNamesShort: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'],
+      dayNamesMin: ['Do', 'Se', 'Te', 'Qu', 'Qu', 'Se', 'Sa'],
+      monthNames: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho',
+        'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
+      monthNamesShort: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+      today: 'Hoje'
+  });
   }
 
   registrosDia: any;
@@ -63,24 +86,28 @@ export class RegistrosPorDiaComponent {
 
   voltarDiaAnterior() {
     this.currentDate.setDate(this.currentDate.getDate() - 1);
-    this.monthSummaryComponent.alterarData(this.currentDate);
-    this.atualizarListaRegistros();
+    this.alterarData();
   }
   avancarProximoDia() {
     this.currentDate.setDate(this.currentDate.getDate() + 1);
-    this.monthSummaryComponent.alterarData(this.currentDate);
-    this.atualizarListaRegistros();
+    this.alterarData();
   }
 
   selecionarDia() {
     this.currentDate = new Date(this.formattedDate + " 00:00");
+    this.alterarData();
+  }
+
+  alterarData(){
     this.monthSummaryComponent.alterarData(this.currentDate);
+    //this.daySummaryComponent.alterarData(this.currentDate);
     this.atualizarListaRegistros();
   }
 
   async obterRegistrosPorDia(date: string) {
     this.registrosDia = await this.registersService.obterRegistrosPorDia(date);
     this.storeLastRecord();
+    this.daySummaryComponent.atualizarResumo(this.currentDate);
   }
 
   storeLastRecord() {
@@ -104,5 +131,13 @@ export class RegistrosPorDiaComponent {
     } else {
       this.router.navigate(['/login']);
     }
+  }
+
+  getDayClass(date: any, month: number, year: number): string {
+    const formattedDate = `${year}-${('0' + (month + 1)).slice(-2)}-${('0' + date.day).slice(-2)}`;
+    if (this.specialDays.has(formattedDate)) {
+      return 'highlight-day'; // Classe CSS para dias especiais
+    }
+    return '';
   }
 }

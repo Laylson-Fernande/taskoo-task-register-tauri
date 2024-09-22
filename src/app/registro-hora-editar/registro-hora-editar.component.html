@@ -9,9 +9,12 @@
   <span>Ações</span>
 </div>
 <form class="registro-hora-editar" autocomplete="off" [formGroup]="formulario" (ngSubmit)="salvar()">
-  <select id="contract_id" formControlName="contract_id" class="coluna contrato">
-    <option *ngFor="let contrato of contratos" [value]="contrato.id">{{ contrato.code+" - "+contrato.description }}</option>
-  </select>
+
+
+
+  <input id="contract_id_display" formControlName="contract_id_display" class="coluna contrato" (click)="showDropdown()" readonly>
+  <input id="contract_id" formControlName="contract_id" style="display: none;" (click)="showDropdown()">
+
   <select id="hour_type" formControlName="hour_type" class="coluna tipo-hora">
     <option *ngFor="let tipo_hora of tipos_horas" [value]="tipo_hora.id">{{ tipo_hora.description }}</option>
   </select>
@@ -22,5 +25,13 @@
   <div class="div-buttons">
     <button *ngIf="isEditing" (click)="cancelar($event)" class="bt-cancelar btn btn-primary">Cancelar</button>
     <button type="submit" class="btn btn-primary">Salvar</button>
+  </div>
+  <div id="dropdown-table" class="dropdown-table" *ngIf="contractDropdownVisible">
+    <input type="text" formControlName="contractSearchText" placeholder="Buscar..." class="dropdown-filter">
+    <div class="dropdown-list">
+      <div *ngFor="let contrato of filteredContratos()" (click)="selectContrato(contrato)" class="dropdown-item">
+          <span class="dropdown-span">{{ contrato.code+" - "+contrato.description }}</span>
+      </div>
+    </div>
   </div>
 </form>

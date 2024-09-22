@@ -10,6 +10,7 @@ import { LoginComponent } from './login/login.component';
 import { DialogNoteReminderComponent } from './dialog-note-reminder/dialog-note-reminder.component';
 import { ConfiguracoesComponent } from './configuracoes/configuracoes.component';
 import { DialogChangeAutorunComponent } from './dialog-change-autorun/dialog-change-autorun.component';
+import { DialogCheckUpdateComponent } from './dialog-check-update/dialog-check-update.component';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent},
@@ -24,7 +25,8 @@ const routes: Routes = [
     children: [
       {path:'start-reminders', component: DialogStartRemindersComponent},
       {path:'note-reminder', component: DialogNoteReminderComponent},
-      {path:'change-autorun', component: DialogChangeAutorunComponent}
+      {path:'change-autorun', component: DialogChangeAutorunComponent},
+      {path:'check-update', component: DialogCheckUpdateComponent}
     ]
    },
   // ... outras rotas

@@ -1,16 +1,24 @@
 .day-summary {
+    padding:15px;
     width: fit-content;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
     gap: 1.5vw;
 }
 
 .summary-item {
-    background-color: #b1b1b1;
+    background-color: #6b6b6b;
     border-radius: 10px;
     display: grid;
     grid-template-columns: 1fr .5fr;
     gap: 0.5vw;
     padding: 5px;
     width: fit-content;
+}
+
+.summary-title {
+
+}
+
+.summary-value {
+    font-weight: bold;
 }

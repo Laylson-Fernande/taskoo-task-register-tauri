@@ -45,6 +45,10 @@ export class RegistersRepository {
         return  await invoke('delete_registro', { id });
     }
 
+    async consultarTotalHorasDia(release_date: String) {
+        return await invoke('get_total_horas_dia', { releaseDate:release_date });
+    }
+
      getIregistro(registro:any): Registro {
         const iRegistro:Registro = {
             id: 0,

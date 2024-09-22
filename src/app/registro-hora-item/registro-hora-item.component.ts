@@ -5,6 +5,7 @@ import { RegistroHoraEditarDialogComponent } from '../registro-hora-editar-dialo
 import { OrbitClient, OrbitParams } from 'src/services/orbit/orbitClient';
 import { AppUtils } from 'src/utils/app.utils';
 import { RegistersService } from 'src/services/app/registers.service';
+import { WebviewWindow } from '@tauri-apps/api/window';
 
 @Component({
   selector: 'app-registro-hora-item',
@@ -28,7 +29,7 @@ export class RegistroHoraItemComponent {
     status_orbit: string,
     mensagem: string,
     editar: string,
-    apagar: string
+    apagar: string,
   } = {
       id: '',
       orbit_id: '',
@@ -45,10 +46,10 @@ export class RegistroHoraItemComponent {
       status_orbit:'',
       mensagem:'',
       editar: '',
-      apagar: ''
+      apagar: '',
     };
 
-  @Output() registroAlterado = new EventEmitter<any>();
+  //@Output() registroAlterado = new EventEmitter<any>();
 
   private mouseHover :boolean = false;
 
@@ -106,7 +107,7 @@ export class RegistroHoraItemComponent {
     dialogRef.afterClosed().subscribe(async result => {
       if (result) {
         await this.registersService.apagarRegistro(this.RegistroHora);
-        this.registroAlterado.emit();
+        this.emitAtualizarDashboard();
       }
     });
   }
@@ -120,11 +121,24 @@ export class RegistroHoraItemComponent {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        // Atualizar o registro com os dados editados
         this.RegistroHora = result;
-        this.registroAlterado.emit();
+        this.emitAtualizarDashboard();
       }
     });
+  }
+
+  reprocessarRegistro(){
+    this.registersService.reprocessarRegistro(this.RegistroHora);
+  }
+  
+  async emitAtualizarDashboard(){
+    const app = await WebviewWindow.getByLabel('main');
+    if (app) {
+      await app.show();
+      await app.setFocus();
+      await app.maximize();
+      await app.emit("atualizar-dashboard","");
+    }
   }
 
   mouseenter(){

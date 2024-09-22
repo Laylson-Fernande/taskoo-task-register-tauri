@@ -15,7 +15,7 @@ export class MonthSummaryComponent {
     total_sum_hours_recorded: '',
     total_status_approved: '',
     total_status_waiting_approval: '',
-    total_status_disapproved: '',
+    total_status_error: '',
     working_hours: ''
   }
 

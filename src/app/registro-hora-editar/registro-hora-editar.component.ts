@@ -1,13 +1,13 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectorRef, Inject, NgZone } from '@angular/core';
+import { Component, Input, ChangeDetectorRef, NgZone, Output, EventEmitter} from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { listen } from '@tauri-apps/api/event';
-import { firstValueFrom } from 'rxjs';
 import { RegistersRepository } from 'src/services/repositories/registers-repository.service';
 import { RegistersService } from 'src/services/app/registers.service';
+import { WebviewWindow } from '@tauri-apps/api/window'
 
 
 import { NotificationService } from 'src/services/app/notification.service';
-import { OrbitClient, OrbitParams } from 'src/services/orbit/orbitClient';
+import { OrbitClient} from 'src/services/orbit/orbitClient';
 import { AppUtils } from 'src/utils/app.utils';
 
 @Component({
@@ -23,6 +23,8 @@ export class RegistroHoraEditarComponent {
 
   formulario: FormGroup;
   registro: any;
+  contractDropdownVisible : boolean = false;
+  contractSearchText : string = '';
 
   constructor(private orbitClient: OrbitClient, private fb: FormBuilder, private changeDetectorRef: ChangeDetectorRef,
     private notificationService: NotificationService, private registersRepository: RegistersRepository, private registersService: RegistersService, private zone: NgZone) {
@@ -36,6 +38,8 @@ export class RegistroHoraEditarComponent {
       description: ['', Validators.required],
       release_date: ['', Validators.required],
       total_time_sheet_hours: ['', Validators.required],
+      contractSearchText: [''],
+      contract_id_display:[''],
     });
 
     listen('atualizar-dashboard', (event) => {
@@ -58,12 +62,15 @@ export class RegistroHoraEditarComponent {
 
   ngOnInit() {
     this.atualizarForm();
+    document.addEventListener('click', this.onClickOutside.bind(this));
   }
 
   async atualizarForm() {
     this.contratos = await this.registersService.obterContratosPorFuncionario();
     if (this.isEditing) {
       this.formulario.patchValue(this.registroEdicao);
+      const contrato = this.contratos.find(contrato => contrato.id == this.registroEdicao.contract_id);
+      this.selectContrato(contrato);
     } else {
       this.limparForm();
     }
@@ -71,7 +78,9 @@ export class RegistroHoraEditarComponent {
   }
 
   limparForm() {
-    this.formulario.get('contract_id')?.setValue(this.contratos[0].id);
+    //this.formulario.get('contract_id')?.setValue(this.contratos[0].id);
+    //this.formulario.get('contract_id_display')?.setValue(this.contratos[0].code+" - "+this.contratos[0].description);
+    this.selectContrato(this.contratos[0]);
     this.formulario.get('hour_type')?.setValue(this.tipos_horas[0].id);
     this.formulario.get('start_at')?.setValue('');
     this.formulario.get('end_at')?.setValue('');
@@ -98,8 +107,19 @@ export class RegistroHoraEditarComponent {
       }
       if(registroCriado || registroAlterado){
         this.registroAlterado.emit(registro);
+        this.emitAtualizarDashboard();
         this.limparForm();
       }
+    }
+  }
+
+  async emitAtualizarDashboard(){
+    const app = await WebviewWindow.getByLabel('main');
+    if (app) {
+      await app.show();
+      await app.setFocus();
+      await app.maximize();
+      await app.emit("atualizar-dashboard","");
     }
   }
 
@@ -119,4 +139,27 @@ export class RegistroHoraEditarComponent {
     this.formulario.get('total_time_sheet_hours')?.setValue(timeSheetHours);
 
   }
+
+  showDropdown(){
+    this.contractDropdownVisible = true;
+  }
+
+  filteredContratos(): { id: string, description: string, code: string }[] {
+    return this.contratos.filter(contrato => (contrato.code+" - "+contrato.description).toLocaleLowerCase().includes(this.formulario.value.contractSearchText.toLowerCase()));
+  }
+
+  selectContrato(contrato: any) {
+      this.formulario.get('contract_id')?.setValue(contrato.id);
+      this.formulario.get('contract_id_display')?.setValue(contrato.code+" - "+contrato.description);
+      this.contractDropdownVisible = false;
+  }
+
+  onClickOutside(event: MouseEvent): void {
+    const dropdown_table = document.getElementById('dropdown-table');
+    const target = event.target as HTMLElement;
+    if (dropdown_table && !dropdown_table.contains(target as Node) && target.id != "contract_id_display" && this.contractDropdownVisible) {
+      this.contractDropdownVisible = false;
+    }
+  }
+
 }
