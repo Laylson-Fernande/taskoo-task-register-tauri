@@ -25,6 +25,8 @@ rusqlite = { version = "0.29.0", features = ["bundled"] }
 reqwest = { version = "0.11", features = ["json"] }
 tauri-plugin-autostart = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
 tauri-plugin-log = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
+windows = "0.39.0"
+winapi = { version = "0.3", features = ["winuser", "winnt", "wtsapi32"] }
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem

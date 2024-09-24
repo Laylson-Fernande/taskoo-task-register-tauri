@@ -1,62 +1,48 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+extern crate winapi;
 
-use chrono::{Local, Timelike};
-use rusqlite::{Connection, Result};
-use serde::{Deserialize, Serialize};
-use std::{env::current_dir, path::PathBuf, thread, time};
+use chrono::{DateTime, Datelike, Local, Timelike};
+use rusqlite::Result;
+use std::{env::current_dir, thread, time};
 use tauri::{CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem, SystemTraySubmenu, WindowEvent, generate_context
 };
 use tauri_plugin_autostart::MacosLauncher;
 use tauri::api::shell;
 use tauri::api::path::app_data_dir;
 use std::fs;
-use tauri_plugin_log::{LogTarget};
+use tauri_plugin_log::LogTarget;
 use std::process::Command;
-use std::fs::{File, metadata};
+use std::fs::File;
 use std::io::Write;
 use std::path::Path;
-// Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
+
+use std::ptr::null_mut;
+use std::mem::zeroed;
+use winapi::um::winuser::*;
+use winapi::um::libloaderapi::GetModuleHandleW;
+use winapi::shared::minwindef::{LPARAM, LRESULT, UINT, WPARAM};
+use winapi::shared::windef::HWND;
+
+
+mod db;
+
+use db::{ddl, registros_repository, registros_repository::{Registro, ResumoDia}, configurations_repository, configurations_repository::Configuracao};
+
+// Definir manualmente as funções da wtsapi32.dll
+#[link(name = "wtsapi32")]
+extern "system" {
+    fn WTSRegisterSessionNotification(hWnd: HWND, dwFlags: u32) -> bool;
+    fn WTSUnRegisterSessionNotification(hWnd: HWND) -> bool;
+}
 
 static mut RECEIVE_REMINDERS: bool = false;
 static mut REMINDERS_INTERVAL: u32 = 30;
+static mut LAST_REMINDER_TIMESTAMP: i64 = 0;
+static  mut SESSION_UNLOCK: bool = true;
 //static mut DB_NAME: &str = "C:/Users/layls/workspace/pessoal/TaskRegisterTauri/task-register-tauri/task_register_local.db";
 //static DB_NAME: &str = "task_register_local.db";
 static mut DB_NAME: String = String::new();
-
-#[derive(Debug, Serialize, Deserialize)]
-struct Registro {
-    id: i64,
-    orbit_id: String,
-    contract_id: String,
-    hour_type: String,
-    start_at: String,
-    end_at: String,
-    description: String,
-    release_date: String,
-    status: String,
-    mensagem: String,
-    created_at: String,
-    updated_at: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct ResumoDia {
-    total_horas_dia:String
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct Configuracao {
-    id: i64,
-    identifier: String,
-    default_value: String,
-    custom_value: String,
-}
-
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
 
 #[tauri::command]
 fn start_reminders(is_start_reminders: bool) -> String {
@@ -68,215 +54,181 @@ fn start_reminders(is_start_reminders: bool) -> String {
 
 #[tauri::command]
 fn insert_registro(registro: Registro) -> Result<usize, String> {
-    let conn = open_db_connection();
-    conn.execute(
-        "INSERT INTO registros (orbit_id, contract_id, hour_type, start_at, end_at, description, release_date, status, mensagem, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, datetime(CURRENT_TIMESTAMP, '-03:00'), datetime(CURRENT_TIMESTAMP, '-03:00'))",
-        [registro.orbit_id, registro.contract_id, registro.hour_type, registro.start_at, registro.end_at, registro.description, registro.release_date, registro.status, registro.mensagem],
-    )
-    .map_err(|e| e.to_string())
+    registros_repository::insert_registro(registro)
 }
 
 #[tauri::command]
 fn update_registro(id: i64, registro: Registro) -> Result<(), String> {
-    let conn = open_db_connection();
-    conn.execute(
-        "UPDATE registros SET orbit_id = ?1, contract_id = ?2, hour_type = ?3, start_at = ?4, end_at = ?5, description = ?6, release_date = ?7, status = ?8, mensagem = ?9, updated_at = datetime(CURRENT_TIMESTAMP, '-03:00') WHERE id = ?10",
-        [registro.orbit_id, registro.contract_id, registro.hour_type, registro.start_at, registro.end_at, registro.description, registro.release_date, registro.status, registro.mensagem, id.to_string()],
-    )
-    .map_err(|e| e.to_string())?;
-    Ok(())
+    registros_repository::update_registro(id, registro)
 }
 
 #[tauri::command]
 fn delete_registro(id: i64) -> Result<(), String> {
-    let conn = open_db_connection();
-    conn.execute("DELETE FROM registros WHERE id = ?", [id.to_string()])
-        .map_err(|e| e.to_string())?;
-    Ok(())
-}
-
-#[tauri::command]
-fn update_configuracao(configuracao: Configuracao) -> Result<(), String> {
-    let conn = open_db_connection();
-    conn.execute(
-        "UPDATE configuracoes SET custom_value = ?1 WHERE id = ?2 OR identifier = ?3",
-        [
-            Some(configuracao.custom_value),
-            Some(configuracao.id.to_string()),
-            Some(configuracao.identifier),
-        ],
-    )
-    .map_err(|e| e.to_string())?;
-    Ok(())
-}
-
-#[tauri::command]
-fn reset_configuracoes(reset_user_credentials: bool) -> Result<(), String> {
-    let conn = open_db_connection();
-    let mut sql_command = String::from(
-        "UPDATE configuracoes SET custom_value = NULL WHERE custom_value IS NOT NULL ",
-    );
-    if !reset_user_credentials {
-        sql_command.push_str("AND  identifier NOT IN ('USER.EMAIL', 'USER.PASSWORD')");
-    }
-    conn.execute(&sql_command, []).map_err(|e| e.to_string())?;
-    Ok(())
-}
-
-#[tauri::command]
-fn select_configuracoes() -> Result<Vec<Configuracao>, String> {
-    let conn = open_db_connection();
-    let mut stmt = conn
-        .prepare("SELECT id, identifier, default_value, custom_value FROM configuracoes")
-        .map_err(|e| e.to_string())?;
-    let configuracoes_iter = stmt
-        .query_map([], |row| {
-            let config = Configuracao {
-                id: row.get(0)?,
-                identifier: row.get(1)?,
-                default_value: row.get(2)?,
-                custom_value: row.get(3)?,
-            };
-            Ok(config)
-        })
-        .map_err(|e| e.to_string())?;
-
-    let configuracoes: Vec<Configuracao> = configuracoes_iter.map(|r| r.unwrap()).collect();
-    Ok(configuracoes)
-}
-
-#[tauri::command]
-fn select_configuracao(identifier: String) -> Result<Vec<Configuracao>, String> {
-    let conn = open_db_connection();
-    let mut stmt = conn.prepare("SELECT id, identifier, default_value, custom_value FROM configuracoes WHERE identifier = ?1")
-        .map_err(|e| e.to_string())?;
-    let configuracoes_iter = stmt
-        .query_map([identifier], |row| {
-            Ok(Configuracao {
-                id: row.get(0)?,         // Type annotation para i64
-                identifier: row.get(1)?, // Type annotation para String
-                default_value: row.get(2)?,
-                custom_value: row.get(3)?,
-            })
-        })
-        .map_err(|e| e.to_string())?;
-
-    let configuracoes: Vec<Configuracao> = configuracoes_iter.map(|r| r.unwrap()).collect();
-    Ok(configuracoes)
+    registros_repository::delete_registro(id)
 }
 
 #[tauri::command]
 fn select_registros(release_date: String) -> Result<Vec<Registro>, String> {
-    let conn = open_db_connection();
-    let mut stmt = conn.prepare("SELECT id,orbit_id, contract_id, hour_type, start_at, end_at, description, release_date, status, mensagem, created_at, updated_at FROM registros WHERE release_date = ?")
-        .map_err(|e| e.to_string())?;
-    let registros_iter = stmt
-        .query_map([release_date], |row| {
-            Ok(Registro {
-                id: row.get(0)?,       // Type annotation para i64
-                orbit_id: row.get(1)?, // Type annotation para String
-                contract_id: row.get(2)?,
-                hour_type: row.get(3)?,
-                start_at: row.get(4)?,
-                end_at: row.get(5)?,
-                description: row.get(6)?,
-                release_date: row.get(7)?,
-                status: row.get(8)?,
-                mensagem: row.get(9)?,
-                created_at: row.get(10)?,
-                updated_at: row.get(11)?,
-            })
-        })
-        .map_err(|e| e.to_string())?;
-
-    let registros: Vec<Registro> = registros_iter.map(|r| r.unwrap()).collect();
-    Ok(registros)
+    registros_repository::select_registros(release_date)
 }
 
 #[tauri::command]
 fn select_ifexist_registro(registro: Registro) -> Result<Vec<Registro>, String> {
-    let conn = open_db_connection();
-    let mut stmt = conn.prepare(
-        "SELECT id,orbit_id, contract_id, hour_type, start_at, end_at, description, release_date, status, mensagem, created_at, updated_at
-        FROM registros 
-        WHERE (release_date = ?1
-        AND start_at = ?2 
-        AND end_at = ?3
-        AND contract_id = ?4
-        AND description = ?5) OR (orbit_id =  ?6)
-        ")
-        .map_err(|e| e.to_string())?;
-    let registros_iter = stmt
-        .query_map(
-            [
-                registro.release_date,
-                registro.start_at,
-                registro.end_at,
-                registro.contract_id,
-                registro.description,
-                registro.orbit_id,
-            ],
-            |row| {
-                Ok(Registro {
-                    id: row.get(0)?,       // Type annotation para i64
-                    orbit_id: row.get(1)?, // Type annotation para String
-                    contract_id: row.get(2)?,
-                    hour_type: row.get(3)?,
-                    start_at: row.get(4)?,
-                    end_at: row.get(5)?,
-                    description: row.get(6)?,
-                    release_date: row.get(7)?,
-                    status: row.get(8)?,
-                    mensagem: row.get(9)?,
-                    created_at: row.get(10)?,
-                    updated_at: row.get(11)?,
-                })
-            },
-        )
-        .map_err(|e| e.to_string())?;
-
-    let registros: Vec<Registro> = registros_iter.map(|r| r.unwrap()).collect();
-    Ok(registros)
+    registros_repository::select_ifexist_registro(registro)
 }
 
 #[tauri::command]
 fn get_total_horas_dia(release_date: String) -> Result<Vec<ResumoDia>, String> {
-    let conn = open_db_connection();
-    let mut stmt = conn.prepare("SELECT printf('%02d:%02d', SUM(difference_in_seconds) / 3600, (SUM(difference_in_seconds) % 3600) / 60) AS total_dia FROM
-(SELECT strftime('%s', end_at) - strftime('%s', start_at) AS difference_in_seconds FROM registros WHERE release_date = ?)")
-        .map_err(|e| e.to_string())?;
-    let result_iter = stmt
-        .query_map([release_date], |row| {
-            Ok(ResumoDia{ total_horas_dia: row.get(0)?})
-        })
-        .map_err(|e| e.to_string())?;
+    registros_repository::get_total_horas_dia(release_date)
+}
 
-    let result: Vec<ResumoDia> = result_iter.map(|r| r.unwrap()).collect();
-    Ok(result)
+#[tauri::command]
+fn update_configuracao(configuracao: Configuracao) -> Result<(), String> {
+    configurations_repository::update_configuracao(configuracao)
+}
+
+#[tauri::command]
+fn reset_configuracoes(reset_user_credentials: bool) -> Result<(), String> {
+    configurations_repository::reset_configuracoes(reset_user_credentials)
+}
+
+#[tauri::command]
+fn select_configuracoes() -> Result<Vec<Configuracao>, String> {
+    configurations_repository::select_configuracoes()
+}
+
+#[tauri::command]
+fn select_configuracao(identifier: String) -> Result<Vec<Configuracao>, String> {
+    configurations_repository::select_configuracao(identifier)
+}
+
+unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: UINT, w_param: WPARAM, l_param: LPARAM) -> LRESULT {
+    match msg {
+        WM_DESTROY => {
+            PostQuitMessage(0);
+            0
+        }
+        WM_WTSSESSION_CHANGE => {
+            match w_param as usize {
+                WTS_SESSION_LOCK => {
+                    println!("O sistema foi bloqueado.");
+                    unsafe {
+                        SESSION_UNLOCK = false;
+                    }
+                }
+                WTS_SESSION_UNLOCK => {
+                    println!("O sistema foi desbloqueado.");
+                    unsafe {
+                        SESSION_UNLOCK = true;
+                    }                    
+                }
+                _ => {}
+            }
+            0
+        }
+        _ => DefWindowProcW(hwnd, msg, w_param, l_param),
+    }
+}
+
+fn thread_get_messagens(){
+    unsafe {
+        let h_instance = GetModuleHandleW(null_mut());
+        let class_name = wide_string("my_window_class");
+
+        let wnd_class = WNDCLASSW {
+            style: 0,
+            lpfnWndProc: Some(wnd_proc),
+            hInstance: h_instance,
+            lpszClassName: class_name.as_ptr(),
+            ..zeroed()
+        };
+
+        RegisterClassW(&wnd_class);
+
+        let hwnd = CreateWindowExW(
+            0,
+            class_name.as_ptr(),
+            wide_string("Session Monitor").as_ptr(),
+            WS_OVERLAPPEDWINDOW,
+            0,
+            0,
+            300,
+            200,
+            null_mut(),
+            null_mut(),
+            h_instance,
+            null_mut(),
+        );
+
+        // Registra para receber notificações de sessão
+        WTSRegisterSessionNotification(hwnd, 0);
+
+        let mut msg: MSG = zeroed();
+
+        while GetMessageW(&mut msg, null_mut(), 0, 0) > 0 {
+            TranslateMessage(&msg);
+            DispatchMessageW(&msg);
+        }
+
+        WTSUnRegisterSessionNotification(hwnd);
+    }
+}
+
+fn wide_string(s: &str) -> Vec<u16> {
+    use std::ffi::OsStr;
+    use std::os::windows::ffi::OsStrExt;
+    OsStr::new(s).encode_wide().chain(std::iter::once(0)).collect()
 }
 
 fn atualizar(app_handle: tauri::AppHandle) {
+    let mut sleep_duration:u64 = 60;
     let receie_reminders: bool;
     unsafe {
         receie_reminders = RECEIVE_REMINDERS;
     }
-    if receie_reminders {
+    let is_user_logado :bool = is_user_logado();
+    if receie_reminders && is_user_logado {
         let agora = Local::now();
-        let minuto = agora.minute();
-        let segundos = agora.second();
         let reminders_interval: u32;
+        let last_reminder:DateTime<Local>;
         unsafe {
             reminders_interval = REMINDERS_INTERVAL;
+            last_reminder =  DateTime::from_timestamp(LAST_REMINDER_TIMESTAMP, 0).unwrap().into();
         }
-        if minuto % reminders_interval == 0 {
-            let app_window = app_handle.get_window("main").unwrap();
-            if true || !app_window.is_visible().unwrap() {
-                update_last_register(app_handle);
+        if agora.minute() % reminders_interval == 0  && last_reminder.minute() != agora.minute(){
+            update_last_register(app_handle.clone());
+            unsafe {
+                LAST_REMINDER_TIMESTAMP = agora.timestamp();
             }
         }
+        if agora.second() != 0 {
+            sleep_duration = 1;
+        }
     }
-    thread::sleep(time::Duration::from_secs(60));
+
+    if is_user_logado {
+        let last_reminder:DateTime<Local>;
+        unsafe {
+            last_reminder = DateTime::from_timestamp(LAST_REMINDER_TIMESTAMP, 0).unwrap().into();
+        }
+        let agora = Local::now();
+        if last_reminder.day() != agora.day() {
+            println!("ABRINDO DIALOG NOVAMENTE LAST DAY:{} AGORA:{}",last_reminder.day(), agora.day());
+            show_dialog_start_reminders(app_handle.clone());
+        }
+
+    }
+    thread::sleep(time::Duration::from_secs(sleep_duration));
+}
+
+fn is_user_logado() -> bool {
+    //println!("{}", std::env::var("USERNAME").unwrap());
+    //std::env::var("USERNAME").is_ok()
+    let mut session_unlock:bool = true;
+    unsafe {
+        session_unlock = SESSION_UNLOCK;
+    }
+    session_unlock
 }
 
 fn update_last_register(app_handle: tauri::AppHandle) {
@@ -284,6 +236,11 @@ fn update_last_register(app_handle: tauri::AppHandle) {
     dialog_window.center().unwrap();
     dialog_window.show().unwrap();
     dialog_window.emit(&"atualizar-note-reminder", "").unwrap();
+}
+
+fn show_dialog_start_reminders(app_handle: tauri::AppHandle){
+    let start_reminders = app_handle.get_window("start-reminders").unwrap();
+    start_reminders.show().unwrap();
 }
 
 fn show_main_window(app_handle: tauri::AppHandle) {
@@ -297,38 +254,33 @@ fn show_dialog_change_autorun(app_handle: tauri::AppHandle) {
     change_autorun.show().unwrap();
 }
 
-fn show_dialog_receie_reminders(app_handle: tauri::AppHandle) {
-    let receie_reminders = app_handle.get_window("start-reminders").unwrap();
-    receie_reminders.show().unwrap();
-}
-
 fn logout_orbit(app_handle: tauri::AppHandle) {
     let main_window = app_handle.get_window("main").unwrap();
     main_window.emit(&"logout-orbit", "").unwrap();
     main_window.show().unwrap();
 }
 
-
-
 fn main() {
-
     let context = generate_context!();
     let config = &context.config();
     let app_data_path= app_data_dir(config).unwrap();
-    
     if !app_data_path.exists() {
         let _ = fs::create_dir_all(&app_data_path);
     }
-    create_db_default(app_data_path.clone()).unwrap();
-    //executar_script_powershell_update( app_data_path.clone().into_os_string().into_string().unwrap(), current_dir.into_os_string().into_string().unwrap(), config.package.product_name.clone().unwrap());
+    //create_db_default(app_data_path.clone()).unwrap();
+    ddl::create_db_default(app_data_path.clone()).unwrap();
+
+    unsafe {
+        LAST_REMINDER_TIMESTAMP = Local::now().timestamp();
+    }
 
     let options_item_1 = CustomMenuItem::new(
-        "autostart_enable",
+        "enable_autostart",
         "Ativar/Desativar Inicialização automática",
     );
 
     let options_item_2 = CustomMenuItem::new(
-        "receie_reminders",
+        "enable_reminders",
         "Ativar/Desativar Lembretes",
     );
 
@@ -395,14 +347,14 @@ fn main() {
                 "update_last_register" => {
                     update_last_register(app.app_handle());
                 }
-                "autostart_enable" => {
+                "enable_autostart" => {
                     show_dialog_change_autorun(app.app_handle());
+                }
+                "enable_reminders" => {
+                    show_dialog_start_reminders(app.app_handle());
                 }
                 "logout" => {
                     logout_orbit(app.app_handle());
-                }
-                "receie_reminders"  => {
-                    show_dialog_receie_reminders(app.app_handle());
                 }
                 "report_failure" => {
                     let _ = shell::open(&app.shell_scope(), "https://github.com/Laylson-Fernande/taskoo-task-register-tauri/issues/new", None);
@@ -416,7 +368,9 @@ fn main() {
             thread::spawn(move || loop {
                 atualizar(app_handle.clone());
             });
-            
+            thread::spawn(move || loop {
+                thread_get_messagens();
+            });
             Ok(())
         })
         .on_window_event(|event| match event.event() {
@@ -439,7 +393,6 @@ fn main() {
             _ => {}
         })
         .invoke_handler(tauri::generate_handler![
-            greet,
             start_reminders,
             insert_registro,
             select_registros,
@@ -462,6 +415,8 @@ fn main() {
         ]).build())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+
+        println!("END MAIN");
 }
 
 #[tauri::command]
@@ -518,90 +473,6 @@ fn executar_script_powershell_update() {
         Err(e) =>  eprintln!("Erro ao executar o script PowerShell UpdateTaskoo : {}", e),
     }
 }
-
-fn set_db_name(db_name: String) {
-    unsafe {
-        DB_NAME = db_name;
-    }
-}
-
-fn get_db_name() -> String {
-    let db_name:String;
-    unsafe {
-        db_name = DB_NAME.clone();
-    }
-    return db_name;
-}
-
-fn open_db_connection() -> Connection {
-    let db_name = get_db_name();
-    Connection::open(db_name).unwrap_or_else(|e| {
-        eprintln!("Failed to open the database connection: {}", e);
-        std::process::exit(1);
-    })
-}
-
-fn create_db_default(mut app_data_path: PathBuf) -> Result<()> {
-
-    app_data_path.push("task_register_local.db");
-    set_db_name(app_data_path.into_os_string().into_string().unwrap());
-
-    let conn = open_db_connection();
-    // Cria a tabela (se não existir)
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS registros (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            orbit_id TEXT,
-            contract_id TEXT,
-            hour_type TEXT,
-            start_at TEXT,
-            end_at TEXT,
-            description TEXT,
-            release_date TEXT,
-            status TEXT,
-            mensagem TEXT,
-            created_at TEXT,
-            updated_at TEXT
-        );",
-        (),
-    )?;
-
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS configuracoes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            identifier TEXT UNIQUE NOT NULL,
-            default_value TEXT NOT NULL,
-            custom_value TEXT NOT NULL
-        );",
-        (),
-    )?;
-
-    conn.execute(
-        "CREATE TRIGGER IF NOT EXISTS insert_configuracao_trigger
-        BEFORE INSERT ON configuracoes
-        WHEN NEW.identifier IN (
-            SELECT identifier FROM configuracoes
-        )
-        BEGIN
-            SELECT RAISE(IGNORE);
-        END;",
-        (),
-    )?;
-
-    conn.execute(
-        "INSERT INTO configuracoes (identifier, default_value, custom_value)
-        VALUES 
-        ('REMINDERS.INTERVAL', '30', ''),
-        ('AUTO.SYNC.ORBIT', 'false', ''),
-        ('USER.ORBIT.EMAIL', '', ''),
-        ('USER.ORBIT.PASSWORD', '', ''),
-        ('INTEGRATE.ORBIT','true',''),
-        ('AUTORUN.APPLICATION','true','');",
-        (),
-    )?;
-    Ok(())
-}
-
 
 fn create_ps_update_script(file_path: &str) -> std::io::Result<()> {
 
