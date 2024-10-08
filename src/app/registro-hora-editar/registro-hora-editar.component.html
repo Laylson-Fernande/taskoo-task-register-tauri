@@ -29,8 +29,11 @@
   <div id="dropdown-table" class="dropdown-table" *ngIf="contractDropdownVisible">
     <input type="text" formControlName="contractSearchText" placeholder="Buscar..." class="dropdown-filter">
     <div class="dropdown-list">
-      <div *ngFor="let contrato of filteredContratos()" (click)="selectContrato(contrato)" class="dropdown-item">
+      <div *ngFor="let contrato of filteredContratos()" (click)="selectContrato(contrato)" >
+          <div class="dropdown-item">
+            
           <span class="dropdown-span">{{ contrato.code+" - "+contrato.description }}</span>
+          </div>
       </div>
     </div>
   </div>

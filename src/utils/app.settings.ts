@@ -80,6 +80,14 @@ export class AppSettings {
         return this.getSetting(SettingsIdentifiers.USER_ORBIT_PASSWORD)
     }
 
+    isAutoSyncOrbit(): boolean {
+        return this.getSetting(SettingsIdentifiers.AUTO_SYNC_ORBIT).toLocaleLowerCase() === "true";
+    }
+
+    async setAutoSyncOrbitDefinition(sync: boolean) {
+        await this.updateSettings(SettingsIdentifiers.AUTO_SYNC_ORBIT, sync.toString());
+    }
+
     async getAutoRunDefinition() {
         const setting = await this.settingsRepository.getSettingByIdentifier(SettingsIdentifiers.AUTORUN_APPLICATION);
         const value = this.getSettingValue(setting);

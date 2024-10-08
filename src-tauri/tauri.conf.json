@@ -41,9 +41,9 @@
         "icons/cuckoo/128x128@2x.ico",
         "icons/cuckoo/icon.png"
       ],
-      "identifier": "Taskoo",
+      "identifier": "com.laylson.taskoo",
       "targets": "all",
-      "publisher": "Laylson Fernandes",
+      "publisher": "laylson",
       "shortDescription": "Taskoo - Lembretes para registrar tarefas",
       "longDescription": "O Taskoo é uma ferramenta projetada para lembrar e simplificar o registro de tarefas",
       "copyright": "© 2024 Laylson Fernandes"

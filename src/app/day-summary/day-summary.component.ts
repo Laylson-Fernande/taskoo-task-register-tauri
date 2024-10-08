@@ -40,6 +40,7 @@ export class DaySummaryComponent {
       summary.push({ title: "Horas Taskoo:", value: resumoDia.total_taskoo })
       if (resumoDia.total_hour_daily && resumoDia.balance_hours_daily) {
         summary.push({ title: "Saldo do dia:", value: resumoDia.balance_hours_daily })
+        sessionStorage.setItem("balance_hours_daily", resumoDia.balance_hours_daily);
         if (resumoDia.balance_hours_daily.includes("-")) {
           summary.push({ title: "Total Horas:", value: resumoDia.total_hour_daily })
         } else {

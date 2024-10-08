@@ -41,12 +41,25 @@ export class RegistersRepository {
         return await invoke("select_ifexist_registro", { registro:iRegistro });
     }
 
+    async consultarUltimoRegistroDia(release_date: String){
+        const iRegistro:Registro = this.getIregistro(release_date);
+        return await invoke("select_last_registro", { releaseDate:release_date });
+    }
+
     async excluirRegistro(id: number) {
         return  await invoke('delete_registro', { id });
     }
 
     async consultarTotalHorasDia(release_date: String) {
         return await invoke('get_total_horas_dia', { releaseDate:release_date });
+    }
+
+    async consultarTotalHorasNormaisDia(release_date: String, ignored_id:String) {
+        return await invoke('get_total_horas_normal_dia', { releaseDate:release_date, ignoredId: ignored_id });
+    }
+
+    async daysWithWarning() {
+        return await invoke('select_days_with_warning', {});
     }
 
      getIregistro(registro:any): Registro {

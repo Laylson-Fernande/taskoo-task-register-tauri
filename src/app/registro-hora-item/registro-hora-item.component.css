@@ -55,6 +55,14 @@
   background-color: #adaf4c;
 }
 
+.PENDING-DELETE .registro-hora-item-row {
+  opacity: 0.2;
+}
+
+.PENDING-REPLACE {
+  background-color: #adaf4c;
+}
+
 .ERROR {
   background-color: #af554c;
 }
@@ -71,7 +79,7 @@
   cursor: pointer;
 }
 
-.tooltip {
+.tooltip-item-message {
   white-space: normal; /* Permite a quebra de linha */
   word-wrap: break-word;
   background-color: transparent;
@@ -82,7 +90,7 @@
   transition: transform 0.3s ease;
 }
 
-.registro-hora-item:hover .tooltip {
+.registro-hora-item:hover .tooltip-item-message {
   transform: translateY(0%); /* Ajusta o afastamento ao passar o mouse */
 }
 

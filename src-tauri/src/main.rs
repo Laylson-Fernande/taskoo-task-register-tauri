@@ -5,7 +5,7 @@ extern crate winapi;
 use chrono::{DateTime, Datelike, Local, Timelike};
 use rusqlite::Result;
 use std::{env::current_dir, thread, time};
-use tauri::{CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem, SystemTraySubmenu, WindowEvent, generate_context
+use tauri::{CustomMenuItem, Manager, WindowBuilder, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem, SystemTraySubmenu, WindowEvent, generate_context
 };
 use tauri_plugin_autostart::MacosLauncher;
 use tauri::api::shell;
@@ -27,7 +27,7 @@ use winapi::shared::windef::HWND;
 
 mod db;
 
-use db::{ddl, registros_repository, registros_repository::{Registro, ResumoDia}, configurations_repository, configurations_repository::Configuracao};
+use db::{ddl, registros_repository, registros_repository::{Registro, ResumoDia, DayWithWarning}, configurations_repository, configurations_repository::Configuracao};
 
 // Definir manualmente as funções da wtsapi32.dll
 #[link(name = "wtsapi32")]
@@ -40,9 +40,6 @@ static mut RECEIVE_REMINDERS: bool = false;
 static mut REMINDERS_INTERVAL: u32 = 30;
 static mut LAST_REMINDER_TIMESTAMP: i64 = 0;
 static  mut SESSION_UNLOCK: bool = true;
-//static mut DB_NAME: &str = "C:/Users/layls/workspace/pessoal/TaskRegisterTauri/task-register-tauri/task_register_local.db";
-//static DB_NAME: &str = "task_register_local.db";
-static mut DB_NAME: String = String::new();
 
 #[tauri::command]
 fn start_reminders(is_start_reminders: bool) -> String {
@@ -75,6 +72,21 @@ fn select_registros(release_date: String) -> Result<Vec<Registro>, String> {
 #[tauri::command]
 fn select_ifexist_registro(registro: Registro) -> Result<Vec<Registro>, String> {
     registros_repository::select_ifexist_registro(registro)
+}
+
+#[tauri::command]
+fn select_last_registro(release_date: String) -> Result<Vec<Registro>, String> {
+    registros_repository::select_last_registro(release_date)
+}
+
+#[tauri::command]
+fn select_days_with_warning() -> Result<Vec<DayWithWarning>, String> {
+    registros_repository::select_days_with_warning()
+}
+
+#[tauri::command]
+fn get_total_horas_normal_dia(release_date: String, ignored_id: String) -> Result<Vec<ResumoDia>, String> {
+    registros_repository::get_total_horas_normal_dia(release_date, ignored_id)
 }
 
 #[tauri::command]
@@ -196,7 +208,7 @@ fn atualizar(app_handle: tauri::AppHandle) {
             last_reminder =  DateTime::from_timestamp(LAST_REMINDER_TIMESTAMP, 0).unwrap().into();
         }
         if agora.minute() % reminders_interval == 0  && last_reminder.minute() != agora.minute(){
-            update_last_register(app_handle.clone());
+            update_last_register(app_handle.clone(),false);
             unsafe {
                 LAST_REMINDER_TIMESTAMP = agora.timestamp();
             }
@@ -215,6 +227,14 @@ fn atualizar(app_handle: tauri::AppHandle) {
         if last_reminder.day() != agora.day() {
             println!("ABRINDO DIALOG NOVAMENTE LAST DAY:{} AGORA:{}",last_reminder.day(), agora.day());
             show_dialog_start_reminders(app_handle.clone());
+            show_dialog_check_update(app_handle.clone());
+            unsafe {
+                LAST_REMINDER_TIMESTAMP = agora.timestamp();
+            }
+        }
+
+        if agora.minute() % 10 == 0 {
+            sincronizar_registros(app_handle.clone());
         }
 
     }
@@ -231,16 +251,24 @@ fn is_user_logado() -> bool {
     session_unlock
 }
 
-fn update_last_register(app_handle: tauri::AppHandle) {
+fn sincronizar_registros(app_handle: tauri::AppHandle){
+    let main_window = app_handle.get_window("main").unwrap();
+    main_window.emit(&"SINCRONIZAR-REGISTROS", "").unwrap();
+}
+
+fn update_last_register(app_handle: tauri::AppHandle, show_now: bool) {
     let dialog_window = app_handle.get_window("note-reminder").unwrap();
     dialog_window.center().unwrap();
-    dialog_window.show().unwrap();
     dialog_window.emit(&"atualizar-note-reminder", "").unwrap();
+    if show_now {
+        dialog_window.show().unwrap();
+    }
 }
 
 fn show_dialog_start_reminders(app_handle: tauri::AppHandle){
-    let start_reminders = app_handle.get_window("start-reminders").unwrap();
-    start_reminders.show().unwrap();
+    //let start_reminders = app_handle.get_window("start-reminders").unwrap();
+    //start_reminders.show().unwrap();
+    recriar_janela("start-reminders".to_string(), app_handle);
 }
 
 fn show_main_window(app_handle: tauri::AppHandle) {
@@ -252,6 +280,11 @@ fn show_main_window(app_handle: tauri::AppHandle) {
 fn show_dialog_change_autorun(app_handle: tauri::AppHandle) {
     let change_autorun = app_handle.get_window("change-autorun").unwrap();
     change_autorun.show().unwrap();
+    //recriar_janela("change-autorun".to_string(), app_handle);
+}
+
+fn show_dialog_check_update(app_handle: tauri::AppHandle){
+    recriar_janela("check-update".to_string(), app_handle);
 }
 
 fn logout_orbit(app_handle: tauri::AppHandle) {
@@ -345,7 +378,7 @@ fn main() {
                     show_main_window(app.app_handle());
                 }
                 "update_last_register" => {
-                    update_last_register(app.app_handle());
+                    update_last_register(app.app_handle(), true);
                 }
                 "enable_autostart" => {
                     show_dialog_change_autorun(app.app_handle());
@@ -403,9 +436,12 @@ fn main() {
             reset_configuracoes,
             select_configuracoes,
             select_configuracao,
+            select_days_with_warning,
             get_version,
             executar_script_powershell_update,
-            get_total_horas_dia
+            get_total_horas_dia,
+            get_total_horas_normal_dia,
+            select_last_registro
         ])
         .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(vec![])))
         .plugin(tauri_plugin_log::Builder::default().targets([
@@ -417,6 +453,33 @@ fn main() {
         .expect("error while running tauri application");
 
         println!("END MAIN");
+}
+
+fn recriar_janela(windows_label: String, app_handle: tauri::AppHandle) {
+    // Obtém as configurações do arquivo tauri.config.json
+    let config = app_handle.config().clone();
+
+    // Identifica as configurações da janela
+    let window_config = config.tauri.windows.iter().find(|w| w.label == windows_label).unwrap();
+
+    // Recria a janela com as configurações definidas no arquivo tauri.config.json
+    let window_builder = WindowBuilder::new(
+        &app_handle,
+    window_config.label.clone(), // Nome da janela
+    window_config.url.clone() // URL da janela
+    )
+    .title(&window_config.title) // Título da janela
+    .inner_size(window_config.width, window_config.height)
+    .visible(window_config.visible)
+    .maximizable(window_config.maximizable)
+    .minimizable(window_config.minimizable)
+    .closable(window_config.closable)
+    .resizable(window_config.resizable)
+    .always_on_top(window_config.always_on_top)
+    .center()
+    .build()
+    .unwrap();
+
 }
 
 #[tauri::command]

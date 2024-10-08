@@ -67,7 +67,7 @@ export class DialogCheckUpdateComponent {
   }
 
   async onNoClick(): Promise<void> {
-    invoke<string>("start_reminders", { isStartReminders:false }).then();
+    //invoke<string>("start_reminders", { isStartReminders:false }).then();
     this.closeDialogView();
   }
 

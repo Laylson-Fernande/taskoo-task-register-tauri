@@ -11,41 +11,39 @@
   .registro-hora-editar {
     display: grid;
     grid-template-columns: 3fr 1.5fr .6fr .6fr .6fr 4fr 1fr;
-    align-items: center;
     gap: 10px;
     
     padding: 7px;
     background-color: #f5f5f54d;
-    margin-bottom: 10px; /* Espaçamento entre os itens */
+    margin-bottom: 10px; 
     z-index: 1;
   }
   
   .registro-hora-header {
     display: grid;
-    grid-template-columns: 3fr 1.5fr .6fr .6fr .6fr 4fr 1fr;
+    grid-template-columns: 3fr 1.54fr .6fr .6fr .6fr 4fr 1fr;
     align-items: center;
     gap: 10px;
     
     padding: 7px;
     background-color: #f5f5f54d;
-    margin-bottom: 10px; /* Espaçamento entre os itens */
+    margin-bottom: 10px; 
     z-index: 1;
   }
 
   .registro-hora-header.editing {
-    grid-template-columns: 3fr 1.5fr .6fr .6fr .6fr 4fr 1.8fr;
+    text-align: center;
   } 
 
   .coluna {
-    /* Estilos comuns para todas as colunas */
     text-align: center;
-    overflow: hidden; /* Esconde o texto que ultrapassa o limite da coluna */
-    text-overflow: ellipsis; /* Adiciona "..." quando o texto é cortado */
-    white-space: nowrap; /* Impede a quebra de linha do texto */
+    overflow: hidden;
+    text-overflow: ellipsis; 
+    white-space: nowrap;
   
     padding: 5px;
-    border-radius: 8px; /* Borda arredondada */
-    background-color: #b1b1b1; /* Fundo cinza claro */
+    border-radius: 8px; 
+    background-color: #b1b1b1; 
     z-index: 2;
     color: rgb(22, 14, 14);
   }
@@ -60,11 +58,10 @@
     background-color: #af554c;
   }
   
-  /* Estilos específicos para cada coluna (opcional) */
   .coluna.contrato {
     font-weight: bold;
     text-align: left;
-    width: 25vw;
+    width: 100%;
   }
 
   .coluna.contrato.lista {
@@ -78,20 +75,20 @@
   }
 
   .coluna.inicio {
-    width: 4.25vw;
+    width: 100%;
   }
 
   .coluna.fim {
-    width: 4.25vw;
+    width: 100%;
   }
 
   .coluna.total {
-    width: 4.25vw;
+    width: 100%;
   }
 
   .coluna.descricao {
     text-align: left;
-    width: 32.5vw;
+    width: 100%;
   }
 
   .coluna.descricao.editing {
@@ -102,7 +99,9 @@
   .dropdown-table {
     position: absolute;
     background: #b1b1b1;
+    /*
     transform: translateY(58%);
+    */
     z-index: 3;
     width: 40vw;
     border-color: #6b6b6b;
@@ -111,13 +110,16 @@
 
   .dropdown-filter {
     border-radius: 0%;
-    width: 37.4vw;;
+    width: 100%;
   }
 
   .dropdown-item {
     cursor: pointer;
     text-align: justify;
     width: 40vw;
+    height: 30px;
+    color: #2f2f2f;
+    font-weight: bold;
   }
 
   .dropdown-span {
@@ -126,13 +128,16 @@
     white-space: nowrap;
     width: 40vw;
     text-overflow: ellipsis;
+    height: 35px;
+    display: flex;
+    align-items: center;
   }
   .dropdown-item :hover {
     background-color: #6b6b6b;
   }
   
   .dropdown-list {
-    max-height: 25vh;
+    max-height: 30vh;
     overflow-y: auto; 
     overflow-x: hidden;
   }

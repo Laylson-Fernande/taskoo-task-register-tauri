@@ -18,8 +18,10 @@
     </div>
     <div>
         <div class="mat-dialog-actions">
-            <button class="mat-button button-no" (click)="fecharLembrete()">Não, fechar lembrete</button>
-            <button class="mat-button button-yes" (click)="criarNovoRegistro()">Sim, criar novo registro</button>
+            <button class="mat-button button-no" (click)="fecharLembrete()" (keydown)="$event.preventDefault()"
+                tabindex="-1">Não, fechar lembrete</button>
+            <button class="mat-button button-yes" (click)="criarNovoRegistro()" (keydown)="$event.preventDefault()"
+                tabindex="-1">Sim, criar novo registro</button>
         </div>
     </div>
 </div>

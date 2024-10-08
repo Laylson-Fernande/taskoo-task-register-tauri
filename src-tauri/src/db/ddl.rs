@@ -53,11 +53,16 @@ pub fn create_db_default(mut app_data_path: PathBuf) -> Result<()> {
         "INSERT INTO configuracoes (identifier, default_value, custom_value)
         VALUES 
         ('REMINDERS.INTERVAL', '30', ''),
-        ('AUTO.SYNC.ORBIT', 'false', ''),
+        ('AUTO.SYNC.ORBIT', 'true', ''),
         ('USER.ORBIT.EMAIL', '', ''),
         ('USER.ORBIT.PASSWORD', '', ''),
         ('INTEGRATE.ORBIT','true',''),
         ('AUTORUN.APPLICATION','true','');",
+        (),
+    )?;
+
+    conn.execute(
+        "UPDATE configuracoes SET default_value = 'true' WHERE identifier = 'AUTO.SYNC.ORBIT';",
         (),
     )?;
     conn.close().unwrap();

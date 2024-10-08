@@ -1,3 +1,4 @@
+import { formatDate } from '@angular/common';
 import { Injectable } from '@angular/core';
 import { retry } from 'rxjs';
 
@@ -8,12 +9,12 @@ import { retry } from 'rxjs';
 export class AppUtils {
 
     static somarHoras(hora1: string, hora2: string): string {
-    
+
         const minutos1 = this.converterParaMinutos(hora1);
         const minutos2 = this.converterParaMinutos(hora2);
-    
+
         const totalMinutos = minutos1 + minutos2;
-    
+
         return this.converterMinutosParaHorario(totalMinutos);
     }
 
@@ -32,7 +33,7 @@ export class AppUtils {
         return result;
     }
 
-    private static converterParaMinutos(horarioString: string): number {
+    static converterParaMinutos(horarioString: string): number {
         const [horas, minutos] = horarioString.split(':').map(Number);
         return horas * 60 + minutos;
     }
@@ -47,7 +48,17 @@ export class AppUtils {
         const diferencaEmMilissegundos = Math.abs(data1.getTime() - data2.getTime());
         const diferencaEmMinutos = Math.floor(diferencaEmMilissegundos / (1000 * 60));
         return diferencaEmMinutos;
-      }
+    }
+
+    static addMinutesToTime(hora: string, minutesToAdd: number) {
+        const [hours, minutes] = hora.split(':').map(Number);
+        const date = new Date();
+        date.setHours(hours, minutes, 0, 0);
+        date.setMinutes(date.getMinutes() + minutesToAdd);
+        const newHours = String(date.getHours()).padStart(2, '0');
+        const newMinutes = String(date.getMinutes()).padStart(2, '0');
+        return `${newHours}:${newMinutes}`;
+    }
 
     dynamicSort(property: any) {
         var sortOrder = 1;
@@ -87,8 +98,8 @@ export class AppUtils {
                 registroOrbit.id = null;
                 registroOrbit.status = "PENDING";
                 registroOrbit.mensagem = "O registro foi obtido do Orbit, mas ainda não está salvo no banco de dados local.";
-                 registrosMerged.push(registroOrbit) 
-                });
+                registrosMerged.push(registroOrbit)
+            });
         }
         if (registrosMerged) {
             registrosMerged.sort(this.dynamicSort(property));
@@ -113,7 +124,7 @@ export class AppUtils {
     compareRegistros(orbit: any, local: any) {
         let equals = false;
         equals = orbit.id == local.orbit_id;
-        if(equals && local.status === "PENDING-UPDATE"){
+        if (equals && local.status === "PENDING-UPDATE") {
             return false;
         } else if (!equals) {
             equals = orbit.contract_id === local.contract_id;
@@ -129,23 +140,25 @@ export class AppUtils {
 
 
     obterStartEndMonth(data: Date) {
-      
+
         const ano = data.getFullYear();
         const mes = data.getMonth();
-      
-        const primeiroDia = new Date(ano, mes, 1); 
-        const ultimoDia = new Date(ano, mes + 1, 0); 
-      
-        return {
-          primeiroDia: AppUtils.formatarData(primeiroDia),
-          ultimoDia: AppUtils.formatarData(ultimoDia)
-        };
-      }
 
-      static formatarData(data: Date): string {
-        const yyyy = data.getFullYear();
-        const mm = String(data.getMonth() + 1).padStart(2, '0');
-        const dd = String(data.getDate()).padStart(2, '0');
-        return `${yyyy}-${mm}-${dd}`;
-      }
+        const primeiroDia = new Date(ano, mes, 1);
+        const ultimoDia = new Date(ano, mes + 1, 0);
+
+        return {
+            primeiroDia: AppUtils.formatarData(primeiroDia),
+            ultimoDia: AppUtils.formatarData(ultimoDia)
+        };
+    }
+
+    static formatarData(data: Date): string {
+        return formatDate(data, 'yyyy-MM-dd', 'en-US');
+    }
+
+    static ThreadSleep(seconds:number) {
+        var e = new Date().getTime() + (seconds * 1000);
+        while (new Date().getTime() <= e) { }
+    }
 }

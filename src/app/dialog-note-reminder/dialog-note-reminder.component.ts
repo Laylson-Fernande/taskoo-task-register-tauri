@@ -7,6 +7,7 @@ import { OrbitClient, OrbitParams } from 'src/services/orbit/orbitClient';
 import { Howl } from 'howler';
 import { RegistersService } from 'src/services/app/registers.service';
 import { EventService } from 'src/utils/event-service';
+import { AppUtils } from 'src/utils/app.utils';
 
 @Component({
   selector: 'app-dialog-note-reminder',
@@ -22,7 +23,7 @@ export class DialogNoteReminderComponent {
     src: ['assets/audio/cuckoo.mp3']
   });
 
-  constructor(private zone: NgZone, private registersService:RegistersService) {
+  constructor(private zone: NgZone, private registersService: RegistersService) {
     listen('atualizar-note-reminder', (event) => {
       this.zone.run(() => {
         this.atualizar();
@@ -35,13 +36,19 @@ export class DialogNoteReminderComponent {
     });
   }
 
-  atualizar() {
+  async atualizar() {
     this.newHourFinal = formatDate(new Date(), 'HH:mm', 'en-US');
+    /*
     const lasRegister = localStorage.getItem("lastRegister");
     if (lasRegister) {
       this.lastRegister = JSON.parse(lasRegister);
     }
-    this.playSoundNotification();
+    */
+    this.lastRegister = await this.registersService.consultarUltimoRegistroDia(AppUtils.formatarData(new Date()));
+    if (this.lastRegister == null || this.lastRegister.end_at < this.newHourFinal) {
+      await this.showDialog();
+      await this.playSoundNotification();
+    }
   }
 
   playSoundNotification() {
@@ -64,7 +71,7 @@ export class DialogNoteReminderComponent {
       await app.show();
       await app.setFocus();
       await app.maximize();
-      await app.emit("atualizar-dashboard","");
+      await app.emit("atualizar-dashboard", "");
       //this.eventService.emitEvent('atualizar-dashboard', { some: 'data' });
       this.fecharDialog();
     }
@@ -77,6 +84,13 @@ export class DialogNoteReminderComponent {
     }
   }
 
+  async showDialog() {
+    const dialog = await WebviewWindow.getByLabel('note-reminder');
+    if (dialog) {
+      await dialog.show();
+    }
+  }
+
 
   criarNovoRegistro() {
     this.redirectToDashboard();
@@ -86,8 +100,15 @@ export class DialogNoteReminderComponent {
   async atualizarUltimoRegistro() {
     this.stopSoundNotification();
     this.lastRegister.end_at = this.newHourFinal;
+    this.lastRegister.total_time_sheet_hours = AppUtils.getTotalTimeSheetHours(this.lastRegister.start_at, this.lastRegister.end_at);
+
+    let registroAdditional = await this.registersService.exceedsLimit(this.lastRegister);
     const alterado = await this.registersService.alterarRegistro(this.lastRegister);
-    if(!alterado){
+    if (registroAdditional != null && alterado) {
+      await this.registersService.criarRegistro(registroAdditional);
+    }
+
+    if (!alterado) {
       this.redirectToDashboard();
     } else {
       this.fecharDialog();

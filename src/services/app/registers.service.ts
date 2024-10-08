@@ -4,6 +4,16 @@ import { OrbitClient, OrbitParams } from 'src/services/orbit/orbitClient';
 import { NotificationService } from 'src/services/app/notification.service';
 import { AppUtils } from 'src/utils/app.utils';
 import { firstValueFrom } from 'rxjs';
+import { AppSettings } from 'src/utils/app.settings';
+
+enum StatusRegistros {
+    PENDING = 'PENDING',
+    PENDING_UPDATE = 'PENDING-UPDATE',
+    PENDING_DELETE = 'PENDING-DELETE',
+    PENDING_REPLACE = 'PENDING-REPLACE',
+    ERROR = 'ERROR',
+    SYNCED = 'SYNCED',
+}
 
 @Injectable({
     providedIn: 'root'
@@ -11,20 +21,22 @@ import { firstValueFrom } from 'rxjs';
 export class RegistersService {
 
     constructor(private orbitClient: OrbitClient,
-        private appUtils: AppUtils, private notificationService: NotificationService, private registersRepository: RegistersRepository) { }
+        private appUtils: AppUtils, private notificationService: NotificationService, private registersRepository: RegistersRepository, private appSettings: AppSettings) { }
 
     async obterRegistrosPorDia(date: string) {
-
-        if (await this.validarIntegracaoOrbit()) {
+        if (this.isAutoSyncOrbit() && await this.validarIntegracaoOrbit()) {
+            /*
             let registrosOrbit = await this.obterRegistrosPorDiaOrbit(date);
             await this.salvarRegistrosOrbitnoLocal(registrosOrbit);
             const registrosLocal = await this.obterRegistrosPorDiaLocal(date);
             await this.atualizarRegistrosApagadosNoOrbit(registrosLocal, registrosOrbit);
-            const hasRegistrosEnviados = await this.salvarRegistrosLocalnoOrbit(registrosLocal);
+            const hasRegistrosEnviados = await this.salvarRegistrosLocalnoOrbit(registrosLocal, false);
             if (hasRegistrosEnviados) {
                 registrosOrbit = await this.obterRegistrosPorDiaOrbit(date);
             }
-            const registrosDia = await this.appUtils.mergeRegistrosSortedBy(registrosOrbit, registrosLocal, "-start_at");
+            */
+            const registros = await this.syncRegistersWithOrbitByDay(date);
+            const registrosDia = await this.appUtils.mergeRegistrosSortedBy(registros.registrosOrbit, registros.registrosLocal, "-start_at");
             return registrosDia;
         } else {
             let registrosLocal: any = await this.obterRegistrosPorDiaLocal(date);
@@ -36,12 +48,12 @@ export class RegistersService {
     async obterResumoDia(date: string) {
         const resumoTaskoo: any = await this.registersRepository.consultarTotalHorasDia(date);
         const resumoDia: any = {};
-        if(resumoTaskoo && resumoTaskoo.length > 0){
+        if (resumoTaskoo && resumoTaskoo.length > 0) {
             resumoDia.total_taskoo = resumoTaskoo[0].total_horas_dia;
         }
         if (await this.validarIntegracaoOrbit()) {
             const resumoOrbit: any = await firstValueFrom(this.orbitClient.obterResumoDia(date));
-            if(resumoOrbit) {
+            if (resumoOrbit) {
                 resumoDia.total_hour_daily = resumoOrbit.data.total_hour_daily;
                 resumoDia.balance_hours_daily = resumoOrbit.data.balance_hours_daily;
             }
@@ -58,7 +70,7 @@ export class RegistersService {
             if (await this.validarIntegracaoOrbit()) {
                 try {
                     const response = await firstValueFrom(this.orbitClient.obterContratosPorFuncionario());
-                    contratos = response.data.map((item: any) => ({ // Transformação dentro do subscribe
+                    contratos = response.data.map((item: any) => ({
                         id: item.service_contract.contract_id,
                         description: item.service_contract.description,
                         code: item.service_contract.code
@@ -72,20 +84,31 @@ export class RegistersService {
         return contratos;
     }
 
-
     async criarRegistro(registro: any) {
+        if (registro.start_at.length > 5) {
+            registro.start_at = registro.start_at.substring(0, 5);
+        }
+        if (registro.end_at.length > 5) {
+            registro.end_at = registro.end_at.substring(0, 5);
+        }
         const bancoLocal = await this.criarRegistroBanco(registro);
         let orbit = false;
-        if (await this.validarIntegracaoOrbit()) {
+        if (this.isAutoSyncOrbit() && await this.validarIntegracaoOrbit()) {
             orbit = await this.criarRegistroOrbit(registro);
         }
         return bancoLocal || orbit;
     }
 
     async alterarRegistro(registro: any) {
+        if (registro.start_at.length > 5) {
+            registro.start_at = registro.start_at.substring(0, 5);
+        }
+        if (registro.end_at.length > 5) {
+            registro.end_at = registro.end_at.substring(0, 5);
+        }
         let alteradoOrbit = false;
         let alteradoLocal = false;
-        if (registro.orbit_id && await this.validarIntegracaoOrbit()) {
+        if (registro.orbit_id  && registro.status !== StatusRegistros.PENDING_REPLACE && this.isAutoSyncOrbit() && await this.validarIntegracaoOrbit()) {
             alteradoOrbit = await this.alterarRegistroOrbit(registro);
         }
         if (registro.id) {
@@ -94,20 +117,30 @@ export class RegistersService {
         return alteradoOrbit || alteradoLocal
     }
 
+
     async apagarRegistro(registro: any) {
-        try {
-            if (registro.orbit_id && registro.orbit_id.length > 0 && await this.validarIntegracaoOrbit) {
-                await this.apagarRegistroOrbit(registro);
+
+        if (registro.orbit_id && registro.orbit_id.length > 0) {
+            if (this.isAutoSyncOrbit() && await this.validarIntegracaoOrbit()) {
+                try {
+                    await this.apagarRegistroOrbit(registro);
+                    await this.apagarRegistroLocal(registro);
+                } catch (httpErroResponse: any) {
+                    registro.status = StatusRegistros.ERROR;
+                    registro.mensagem = "Ocorreu um erro ao tentar excluir o registro no Orbit: " + JSON.stringify(httpErroResponse.error.errors);
+                    await this.alterarRegistroLocal(registro, true);
+                }
+            } else {
+                registro.status = StatusRegistros.PENDING_DELETE;
+                registro.mensagem = "Registro com exclusão pendente, aguardando sincronização com Orbit para ser excluído. Editar o registro vai cancelar a exclusão."
+                await this.alterarRegistroLocal(registro, true);
             }
+        } else {
             await this.apagarRegistroLocal(registro);
-        } catch (httpErroResponse: any) {
-            registro.status = "ERROR";
-            registro.mensagem = "Ocorreu um erro ao tentar excluir o registro no Orbit: " + JSON.stringify(httpErroResponse.error.errors);
-            await this.alterarRegistroLocal(registro, true);
         }
     }
 
-    async reprocessarRegistro(registro: any){
+    async reprocessarRegistro(registro: any) {
         registro.reprocess = true;
         await this.reprocessarRegistroOrbit(registro);
     }
@@ -162,13 +195,13 @@ export class RegistersService {
                     const updated_atLocal = new Date(registroLocal.updated_at);
                     const updated_atOrbit = new Date(registro.updated_at);
                     const diferencaEmMinutos = AppUtils.calcularDiferencaEmMinutos(updated_atLocal, updated_atOrbit);
-                    if ((!registroLocal.orbit_id || registroLocal.orbit_id.length == 0) && registroLocal.status !== "ERROR") {
+                    if ((!registroLocal.orbit_id || registroLocal.orbit_id.length == 0) && registroLocal.status !== StatusRegistros.ERROR) { //Registros salvos no TASKOO, que ainda não tem ID ORBIT
                         registroLocal.orbit_id = registro.id;
-                        registroLocal.status = "SYNCED";
+                        registroLocal.status = StatusRegistros.SYNCED;
                         registroLocal.mensagem = "";
                         await this.registersRepository.atualizarRegistro(registroLocal.id, registroLocal);
-                    } else if (registroLocal.orbit_id == registro.orbit_id && diferencaEmMinutos > 2 && registroLocal.status !== "PENDING-UPDATE") {
-                        registroLocal.status = "SYNCED";
+                    } else if (registroLocal.orbit_id == registro.orbit_id && diferencaEmMinutos > 2 && registroLocal.status !== StatusRegistros.PENDING_UPDATE && registroLocal.status !== StatusRegistros.PENDING_DELETE && registroLocal.status !== StatusRegistros.PENDING_REPLACE) { // Registros alterados via orbit, para serem atualizados no TASKOO
+                        registroLocal.status = StatusRegistros.SYNCED;
                         registroLocal.mensagem = "";
                         registroLocal.start_at = registro.start_at;
                         registroLocal.end_at = registro.end_at;
@@ -186,36 +219,54 @@ export class RegistersService {
         }
     }
 
-    private async salvarRegistrosLocalnoOrbit(registros: any) {
+    private async salvarRegistrosLocalnoOrbit(registros: any, instantSave: boolean) {
         let hasRegistrosEnviados = false;
         if (registros) {
-            registros.forEach(async (registro: any) => {
+            for (let registro of registros) {
                 const created_at = new Date(registro.created_at);
                 const diferencaEmMinutos = AppUtils.calcularDiferencaEmMinutos(created_at, new Date());
-                if (diferencaEmMinutos > 1 && (!registro.orbit_id || registro.orbit_id.length == 0) && registro.status === "PENDING") {
+                if ((instantSave || diferencaEmMinutos > 1) && (!registro.orbit_id || registro.orbit_id.length == 0) && registro.status === StatusRegistros.PENDING) {
                     try {
                         const response = await firstValueFrom(this.orbitClient.criarRegistro(registro));
                         hasRegistrosEnviados = true;
                     } catch (httpErroResponse: any) {
-                        registro.status = "ERROR"
+                        registro.status = StatusRegistros.ERROR;
                         registro.mensagem = "Ocorreu um erro ao tentar salvar esse registro no Orbit: " + JSON.stringify(httpErroResponse.error.errors);
                         await this.registersRepository.atualizarRegistro(registro.id, registro);
                     }
-                } else if (registro.orbit_id && registro.orbit_id.length !== 0 && registro.status === "PENDING-UPDATE") {
+                } else if (registro.orbit_id && registro.orbit_id.length !== 0 && registro.status === StatusRegistros.PENDING_UPDATE) {
                     try {
                         await firstValueFrom(this.orbitClient.alterarRegistro(registro.orbit_id, registro));
                         hasRegistrosEnviados = true;
-                        registro.status = "SYNCED"
+                        registro.status = StatusRegistros.SYNCED;
                         registro.mensagem = "";
                         await this.registersRepository.atualizarRegistro(registro.id, registro);
                     } catch (httpErroResponse: any) {
-                        registro.status = "ERROR"
+                        registro.status = StatusRegistros.ERROR;
                         registro.mensagem = "Ocorreu um erro ao tentar atualizar esse registro no Orbit: " + JSON.stringify(httpErroResponse.error.errors);
                         await this.registersRepository.atualizarRegistro(registro.id, registro);
                     }
 
+                } else if (registro.orbit_id && registro.orbit_id.length !== 0 && registro.status === StatusRegistros.PENDING_REPLACE){
+                    try {
+                        await firstValueFrom(this.orbitClient.deletarRegistro(registro.orbit_id));
+                        registro.orbit_id = '';
+                        registro.status = StatusRegistros.PENDING;
+                        await this.registersRepository.atualizarRegistro(registro.id, registro);
+                        AppUtils.ThreadSleep(2);
+                        await firstValueFrom(this.orbitClient.criarRegistro(registro));
+                        hasRegistrosEnviados = true;
+                    } catch (httpErroResponse: any) {
+                    }
+
+                } else if (registro.orbit_id && registro.orbit_id.length !== 0 && registro.status === StatusRegistros.PENDING_DELETE) {
+                    try {
+                        await firstValueFrom(this.orbitClient.deletarRegistro(registro.orbit_id));
+                        await this.registersRepository.excluirRegistro(registro.id);
+                    } catch (httpErroResponse: any) {
+                    }
                 }
-            });
+            }
         }
         return hasRegistrosEnviados;
     }
@@ -223,7 +274,7 @@ export class RegistersService {
 
     private async criarRegistroBanco(registro: any) {
         const registroLocal = structuredClone(registro);
-        registroLocal.status = "PENDING";
+        registroLocal.status = StatusRegistros.PENDING;
         registroLocal.mensagem = "O registro foi criado com sucesso, mas ainda não foi sincronizado com o Orbit.";
         const response = await this.registersRepository.inserirRegistro(registroLocal);
         if (response == 1) {
@@ -293,10 +344,10 @@ export class RegistersService {
             registroLocal.end_at = registroLocal.end_at.substring(0, 5);
         }
         if (!registro.orbit_id || registro.orbit_id.length == 0) {
-            registroLocal.status = "PENDING";
+            registroLocal.status = StatusRegistros.PENDING;
             registroLocal.mensagem = "O registro foi alterado com sucesso, mas ainda não foi sincronizado com o Orbit.";
-        } else if (!alteradoOrbit) {
-            registroLocal.status = "PENDING-UPDATE";
+        } else if (!alteradoOrbit && registro.status !== StatusRegistros.PENDING_REPLACE) {
+            registroLocal.status = StatusRegistros.PENDING_UPDATE;
             registroLocal.mensagem = "O registro foi alterado, mas as atualizações ainda não foram sincronizadas com o Orbit.";
         }
         try {
@@ -360,7 +411,115 @@ export class RegistersService {
         return resumoTotalMes;
     }
 
+    async syncRegistersWithOrbitByDay(date: string) {
+        let registrosOrbit = await this.obterRegistrosPorDiaOrbit(date);
+        await this.salvarRegistrosOrbitnoLocal(registrosOrbit);
+        const registrosLocal = await this.obterRegistrosPorDiaLocal(date);
+        await this.atualizarRegistrosApagadosNoOrbit(registrosLocal, registrosOrbit);
+        const hasRegistrosEnviados = await this.salvarRegistrosLocalnoOrbit(registrosLocal, true);
+        if (hasRegistrosEnviados) {
+            if (!this.isAutoSyncOrbit()) {
+                AppUtils.ThreadSleep(5);
+                registrosOrbit = await this.obterRegistrosPorDiaOrbit(date);
+                await this.salvarRegistrosOrbitnoLocal(registrosOrbit);
+            } else {
+                registrosOrbit = await this.obterRegistrosPorDiaOrbit(date);
+            }
+        }
+        return { registrosOrbit, registrosLocal };
+    }
+
+    async syncRegistersWithOrbit() {
+        const daysTaskoo = await this.daysWithWarningTaskoo();
+        for (let i = 0; i < daysTaskoo.length; i++) {
+            const day = daysTaskoo[i];
+            await this.syncRegistersWithOrbitByDay(AppUtils.formatarData(day.date))
+        }
+    }
+
+    async obterDaysWithWarning(date: Date) {
+        let daysWithWarning: { day: number, month: number, date: Date, status: String }[] = [];
+        const daysOrbit = await this.daysWithWarningOrbit(date);
+        const daysTaskoo = await this.daysWithWarningTaskoo();
+        if (daysOrbit.length > 0) {
+            daysOrbit.forEach(day => daysWithWarning.push({ day: day.date.getDate(), month: day.date.getMonth() + 1, date: day.date, status: day.status }));
+        }
+        if (daysTaskoo.length > 0) {
+            daysTaskoo.forEach(day => daysWithWarning.push({ day: day.date.getDate(), month: day.date.getMonth() + 1, date: day.date, status: day.status }));
+        }
+        return daysWithWarning;
+    }
+
+    async daysWithWarningOrbit(date: Date) {
+        const endCurrentMonth = this.appUtils.obterStartEndMonth(date).ultimoDia;
+        date.setMonth(date.getMonth() - 1);
+        const beginLastMonth = this.appUtils.obterStartEndMonth(date).primeiroDia
+        const resumoDiasMes = await firstValueFrom(this.orbitClient.obterResumoDiasMes(beginLastMonth, endCurrentMonth));
+
+        let days: { date: Date, status: String }[] = [];
+        resumoDiasMes.data.forEach((resumoDia: any) => {
+            const release_date = resumoDia.release_date;
+            const status = resumoDia.high_priority_status !== 'APPROVED' && resumoDia.high_priority_status !== 'WAITING_APPROVAL' ? StatusRegistros.PENDING: '';
+            days.push({ date: new Date(release_date.replace("T", " ").replace("Z", "")), status: status });
+        });
+        return days;
+    }
+
+    async daysWithWarningTaskoo() {
+        const daysWithWarning: any = await this.registersRepository.daysWithWarning();
+        let days: { date: Date, status: String }[] = [];
+        daysWithWarning.forEach((data: any) => {
+            days.push({ date: new Date(data.day_warning + " 00:00"), status: data.status });
+        }
+        );
+        return days;
+    }
+
     async validarIntegracaoOrbit() {
         return await this.orbitClient.verificarIntegracaoOrbit();
+    }
+
+    isAutoSyncOrbit(): boolean {
+        return this.appSettings.isAutoSyncOrbit();
+    }
+
+    async exceedsLimit(registro: any) {
+        const totalHorasNormaisDia: any = await this.registersRepository.consultarTotalHorasNormaisDia(registro.release_date, String(registro.id));
+        const totalMinutosNormalDia = AppUtils.converterParaMinutos(totalHorasNormaisDia[0].total_horas_dia);
+        const limiteDia = (60 * 8);
+        let timeSheetMinutes = AppUtils.converterParaMinutos(registro.total_time_sheet_hours);
+        if (registro.hour_type === "NORMAL" && (totalMinutosNormalDia + timeSheetMinutes) > limiteDia) {
+            if (totalMinutosNormalDia < limiteDia) {
+                let registroAdditional = structuredClone(registro);
+                registroAdditional.hour_type = "ADDITIONAL";
+                registroAdditional.start_at = AppUtils.addMinutesToTime(registroAdditional.start_at, limiteDia - totalMinutosNormalDia);
+                registroAdditional.total_time_sheet_hours = AppUtils.getTotalTimeSheetHours(registroAdditional.start_at, registroAdditional.end_at);
+                registroAdditional.orbit_id = '';
+                registroAdditional.status = StatusRegistros.PENDING;
+
+                registro.end_at = registroAdditional.start_at;
+                registro.total_time_sheet_hours = AppUtils.getTotalTimeSheetHours(registro.start_at, registro.end_at);
+                return registroAdditional;
+            }
+        }
+        return null;
+    }
+
+    async hasSaldoDia(date: string) {
+        const totalHorasNormaisDia: any = await this.registersRepository.consultarTotalHorasNormaisDia(date, '');
+        const minutosNormaisDia = AppUtils.converterParaMinutos(totalHorasNormaisDia[0].total_horas_dia);
+        return minutosNormaisDia < (60 * 8);
+    }
+
+    async consultarUltimoRegistroDia(date: string) {
+        const ultimoRegistro: any = await this.registersRepository.consultarUltimoRegistroDia(date);
+        if (ultimoRegistro && ultimoRegistro.length > 0) {
+            return ultimoRegistro[0];
+        }
+        return null;
+    }
+
+    static statusRegistros() {
+        return StatusRegistros;
     }
 }

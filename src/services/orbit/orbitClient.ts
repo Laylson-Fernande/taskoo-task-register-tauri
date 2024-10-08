@@ -23,7 +23,7 @@ export class OrbitClient {
   constructor(private http: HttpClient, private router: Router, private activatedRoute: ActivatedRoute, private authService: AuthService, private appSettings: AppSettings) { }
 
   async verificarIntegracaoOrbit() {
-    if(this.authService.isAuthenticated()){
+    if (this.authService.isAuthenticated()) {
       const current = this.router.url;
       return true;
     } else {
@@ -33,7 +33,7 @@ export class OrbitClient {
           return true;
         } catch (erro) {
           const current = this.router.url;
-          if(!current.startsWith("/dialog")){
+          if (!current.startsWith("/dialog")) {
             this.router.navigate(['/login']);
           }
         }
@@ -94,8 +94,14 @@ export class OrbitClient {
     return this.http.get(url, {});
   }
 
-  obterResumoDia(release_date: string){
+  obterResumoDia(release_date: string) {
     const url = `${this.apiUrl_officeservice}/time-sheet/daily-summary?release_date=${release_date}`;
     return this.http.get(url, {});
   }
+
+  obterResumoDiasMes(release_date_start: string, release_date_end: string): Observable<any> {
+    const url = `${this.apiUrl_officeservice}/time-sheet/month-summary?status[]=APPROVED&status[]=DISAPPROVED&status[]=WAITING_APPROVAL&status[]=ERROR_IN_APPROVAL&status[]=PREPROCESSING_WITH_ERROR&status[]=ERROR_BUDGET_HOUR&status[]=ERROR_COST_VALUE&release_date_start=${release_date_start}&release_date_end=${release_date_end}`;
+    return this.http.get(url, {});
+  }
+
 }

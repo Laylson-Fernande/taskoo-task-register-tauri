@@ -12,7 +12,7 @@
 <div class="registros-por-dia">
     <div class="top-options">
         <div class="day-navegation">
-            <div class="day-navegation-container">
+            <div class="day-navegation-container" ngClass="{{getCalendarAlertType()}}">
                 <div (click)="voltarDiaAnterior()" class="day-navegation-arrow div-button">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
                         viewBox="0 0 256 256">
@@ -21,7 +21,14 @@
                         </path>
                     </svg>
                 </div>
-                <input type="date" class="day-navegation-date" [(ngModel)]="formattedDate" (change)="selecionarDia()">
+                <div class="input-group date-picker-div" ngClass="{{getCalendarAlertType()}}">
+                    <input class="form-control date-picker" placeholder="DD-MM-YYYY" name="dp"
+                        [(ngModel)]="modelDatePicker" ngbDatepicker (ngModelChange)="selecionarDia()"
+                        [dayTemplate]="customDay" #d="ngbDatepicker" [footerTemplate]="footerTemplate" [readOnly]="true"
+                        (click)="d.toggle()" />
+
+                    <button class="date-picker" (click)="d.toggle()" type="button"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256"><path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM72,48v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24V80H48V48ZM208,208H48V96H208V208Z"></path></svg></button>
+                </div>
                 <div (click)="avancarProximoDia()" class="day-navegation-arrow div-button">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
                         viewBox="0 0 256 256">
@@ -33,23 +40,60 @@
             </div>
         </div>
 
-        <div class="sync_orbit" >
-            <div class="sync_orbit_container">
-                <div class="sync_orbit_centered-content"  *ngIf="isIntegratedOrbit()" (click)="sincronizarRegistrosOrbit(true)">
-                    <span class="sync_orbit_span">SINCRONIZAR REGISTROS COM ORBIT</span>
+        <ng-template #footerTemplate>
+            <hr class="my-0" />
+            <button class="btn btn-secondary btn-sm m-2 float-start" (click)="today(); d.close()">Hoje</button>
+            <button class="btn btn-secondary btn-sm m-2 float-end" (click)="d.close()">Close</button>
+        </ng-template>
+
+        <ng-template #customDay let-date let-currentMonth="currentMonth" let-selected="selected" let-disabled="disabled"
+            let-focused="focused">
+            <span class="custom-day" [class.day-with-warning]="isDayWithWarning(date)" [class.day-with-error]="isDayWithError(date)" [class.focused]="focused"
+                [class.bg-primary]="selected" [class.diferent-month]="date.month !== currentMonth"
+                [class.text-muted]="disabled">
+                {{ date.day }}
+            </span>
+        </ng-template>
+
+        <div class="sync_orbit">
+            <div class="auto_sync_div" [ngClass]="{'auto_sync_div_check': isAutoSyncOrbit()}">
+                <div>
+                    <span class="auto_sync_span">AUTO-SYNC</span>
                 </div>
-                <div class="sync_orbit_centered-content" *ngIf="!isIntegratedOrbit()" (click)="sincronizarRegistrosOrbit(false)">
-                    <span class="sync_orbit_span">FAZER LOGIN NO ORBIT</span>
+                <label class="switch">
+                    <input type="checkbox" [ngModel]="isAutoSyncOrbit()" (change)="changeAutoSyncOrbit()" />
+                    <span class="slider round"></span>
+                </label>
+            </div>
+            <div class="sync_orbit_container"   [ngClass]="{'sync_orbit_container_hiden': isAutoSyncOrbit()}">
+                <div *ngIf="!loadingService.isSyncing()">
+                    <div class="sync_orbit_centered-content" *ngIf="isIntegratedOrbit()"
+                        (click)="sincronizarRegistrosOrbit(true)">
+                        <span class="sync_orbit_span">SINCRONIZAR REGISTROS COM ORBIT</span>
+                    </div>
+                    <div class="sync_orbit_centered-content" *ngIf="!isIntegratedOrbit()"
+                        (click)="sincronizarRegistrosOrbit(false)">
+                        <span class="sync_orbit_span">FAZER LOGIN NO ORBIT</span>
+                    </div>
+                </div>
+                <div *ngIf="loadingService.isSyncing()" class="sync_orbit_container">
+                    <div class="loader-container">
+                        <div class="loader"></div>
+                    </div>
+                    <div class="sync_orbit_centered-content">
+                        <span class="sync_orbit_span">SINCRONIZANDO...</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <app-registro-hora-editar [dateRelease]="formattedDate" (registroAlterado)="atualizarListaRegistros()"></app-registro-hora-editar>
+    <app-registro-hora-editar [dateRelease]="formattedDate()"
+        (registroAlterado)="atualizarListaRegistros()"></app-registro-hora-editar>
     <div class="registros-lista">
         <div class="registros-lista-container">
-            <app-registro-hora-item *ngFor="let registro of registrosDia" [RegistroHora]="registro"
-            ></app-registro-hora-item>
+            <app-registro-hora-item *ngFor="let registro of registrosDia"
+                [RegistroHora]="registro"></app-registro-hora-item>
         </div>
     </div>
     <div class="button-infos">

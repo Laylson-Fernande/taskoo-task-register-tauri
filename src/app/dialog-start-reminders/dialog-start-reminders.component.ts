@@ -22,7 +22,7 @@ export class DialogStartRemindersComponent {
   async closeDialogView(): Promise<void> {
     const webView = await WebviewWindow.getByLabel('start-reminders');
     if (webView) {
-      await webView.hide();
+      await webView.close();
     }
   }
 }

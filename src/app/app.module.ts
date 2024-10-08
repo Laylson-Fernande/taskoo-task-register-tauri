@@ -29,14 +29,22 @@ import { DaySummaryComponent } from './day-summary/day-summary.component';
 import { DialogChangeAutorunComponent } from './dialog-change-autorun/dialog-change-autorun.component';
 import { LoggedUserInformationComponent } from './logged-user-information/logged-user-information.component';
 import { DialogCheckUpdateComponent } from './dialog-check-update/dialog-check-update.component';
-import { CalendarModule } from 'primeng/calendar';
+import { NgbModule,NgbDateParserFormatter, NgbDatepickerI18n, NgbDatepickerConfig  } from '@ng-bootstrap/ng-bootstrap';
+import { CustomDateParserFormatter, CustomDatepickerI18n } from "src/utils/custom-datepicker-formatter";
 
 @NgModule({
   declarations: [AppComponent, RegistroHoraItemComponent, RegistrosPorDiaComponent, RegistroHoraEditarComponent, HoraMaskDirective, ConfirmacaoExclusaoRegistroComponent, RegistroHoraEditarDialogComponent, NotificationComponent, DialogWindowComponent, AppWindowComponent, DialogStartRemindersComponent, LoginComponent, DialogNoteReminderComponent, ConfiguracoesComponent, MonthSummaryComponent, DaySummaryComponent, DialogChangeAutorunComponent, LoggedUserInformationComponent, DialogCheckUpdateComponent],
   imports: [BrowserModule, MatDialogModule, NgxMaskDirective, 
-    NgxMaskPipe, ReactiveFormsModule ,FormsModule, HttpClientModule, AppRoutingModule, CalendarModule],
+    NgxMaskPipe, ReactiveFormsModule ,FormsModule, HttpClientModule, AppRoutingModule, NgbModule],
   providers: [{ provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
-    { provide: HTTP_INTERCEPTORS, useClass: LoadingInterceptor, multi: true }, provideNgxMask()],
+    { provide: HTTP_INTERCEPTORS, useClass: LoadingInterceptor, multi: true }, provideNgxMask(),
+    { provide: NgbDateParserFormatter, useClass: CustomDateParserFormatter },
+    { provide: NgbDatepickerI18n, useClass: CustomDatepickerI18n }
+  ],
   bootstrap: [AppComponent],
 })
-export class AppModule { }
+export class AppModule {
+  constructor(private config: NgbDatepickerConfig) {
+    this.config.firstDayOfWeek = 7;
+  }
+ }
